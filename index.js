@@ -15,6 +15,7 @@ app.use(
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Origin', 'http://localhost:8000'); // update to match the domain you will make the request from
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   next();
 });
 
@@ -46,6 +47,12 @@ app.get('/desks/:deskId', queries.getDesk);
 app.delete('/desks/:deskId/users/:userId', queries.deleteDeskUser);
 app.get('/desks/:deskId/users', queries.getDeskUsers);
 app.post('/desks/:deskId/users', queries.createDeskUser);
+
+app.post('/desks/columns', queries.createColumn);
+app.delete('/desks/columns/:id', queries.deleteColumn);
+app.post('/desks/cards', queries.createCard);
+app.delete('/desks/cards/:id', queries.deleteCard);
+app.put('/desks/cards/:id', queries.updateCard);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}`);

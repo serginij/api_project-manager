@@ -1,15 +1,43 @@
 const db = require('../db');
+const desk = require('./desk');
 
 const pool = db.pool;
 
-const getTeams = (request, response) => {
-  console.log(request.route);
-  pool.query('select * from team order by id asc', (err, results) => {
-    if (err) {
-      throw err;
-    }
-    response.status(200).json(results.rows);
-  });
+const getTeams = async (request, response) => {
+  try {
+    const results = await pool.query('select * from team order by id asc');
+
+    let deskRes = {};
+
+    let promises = results.rows.map(async (t, index) => {
+      const team = await pool.query('select * from team where id = $1', [t.id]);
+
+      const users = await pool.query(
+        'select id, username from public.user where id in (select user_id from team_user where team_id = $1)',
+        [t.id]
+      );
+      const desks = await pool.query('select * from desk where team_id = $1 order by id asc', [
+        t.id
+      ]);
+
+      results.rows[index].users = users.rows[0] ? [users.rows[0]] : [];
+
+      results.rows[index].desks = [];
+      desks.rows.forEach(row => {
+        deskRes[row.id] = row;
+        return results.rows[index].desks.push(row.id);
+      });
+
+      console.log(`Team ${t.id}`, team.rows[0], deskRes);
+    });
+
+    await Promise.all(promises);
+
+    console.log('response', results.rows);
+    response.status(200).send({ teams: results.rows, desks: deskRes });
+  } catch (err) {
+    response.status(500).send({ message: 'Something went wrong' });
+  }
 };
 
 const getTeamById = async (request, response) => {
@@ -22,9 +50,17 @@ const getTeamById = async (request, response) => {
       'select id, username from public.user where id in (select user_id from team_user where team_id = $1)',
       [id]
     );
-    results.rows.map(row => (row.users = users.rows[0] ? [users.rows[0]] : []));
+    const desks = await pool.query('select * from desk where team_id = $1 order by id asc', [id]);
 
-    response.status(200).json(results.rows);
+    results.rows[0].users = users.rows[0] ? [users.rows[0]] : [];
+    let deskRes = {};
+    results.rows[0].desks = [];
+    desks.rows.forEach(row => {
+      deskRes[row.id] = row;
+      results.rows[0].desks.push(row.id);
+    });
+
+    response.status(200).send({ team: results.rows[0], desks: deskRes });
   } catch (err) {
     response.status(500).send(`Something went wrong`);
     console.log(err);

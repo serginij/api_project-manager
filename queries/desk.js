@@ -10,14 +10,14 @@ const getTeamDesks = async (request, response) => {
       teamId
     ]);
 
-    results.rows.map(async row => {
-      const users = await pool.query(
-        'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1))',
-        [row.id]
-      );
+    // results.rows.map(async row => {
+    //   const users = await pool.query(
+    //     'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1))',
+    //     [row.id]
+    //   );
 
-      console.log(row);
-    });
+    //   console.log(row);
+    // });
 
     response.status(200).json(results.rows);
   } catch (err) {
@@ -46,20 +46,38 @@ const getDesk = async (request, response) => {
   try {
     const results = await pool.query('select * from desk where id = $1', [deskId]);
 
-    const columns = await pool.query('select id, name from column where desk_id = $1', [deskId]);
+    const columns = await pool.query('select id, name from public.column where desk_id = $1', [
+      deskId
+    ]);
+    console.log('getDesk columns', columns.rows);
 
-    columns.rows.map(async column => {
+    let colRes = {};
+    let cardRes = {};
+
+    let promises = columns.rows.map(async column => {
       const cards = await pool.query(
         'select * from card where id in (select card_id from card_user where column_id = $1)',
         [column.id]
       );
-      column.cards = cards.rows;
-    });
-    results.rows.columns = columns.rows;
 
-    response.status(200).json(results.rows);
+      console.log('getDesk column & cards', column, cards.rows);
+
+      colRes[column.id] = column;
+      colRes[column.id].cards = [];
+      cards.rows.forEach(card => {
+        cardRes[card.id] = card;
+        colRes[column.id].cards.push(card.id);
+      });
+      return column.id;
+    });
+
+    results.rows[0].columns = await Promise.all(promises);
+    console.log('getDesk response', results.rows[0], colRes, cardRes);
+
+    response.status(200).send({ desk: results.rows[0], columns: colRes, cards: cardRes });
   } catch (err) {
     response.status(500).send(`Something went wrong`);
+    console.log(err);
   }
 };
 
@@ -69,7 +87,7 @@ const createDesk = (request, response) => {
   console.log(request.body);
   if (name && teamId) {
     pool.query(
-      'insert into desk (name, team_id) values ($1, $2)',
+      'insert into desk (name, team_id) values ($1, $2) returning id',
       [name, teamId],
       (err, results) => {
         if (err) {
@@ -77,8 +95,10 @@ const createDesk = (request, response) => {
           console.log(err.stack);
           throw err;
         }
-        // console.log(results);
-        response.status(201).send(`Team added successfully`);
+        console.log(results);
+        response
+          .status(201)
+          .send({ message: `Desk added successfully`, success: true, id: results.rows[0].id });
       }
     );
   } else {
