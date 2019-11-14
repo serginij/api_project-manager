@@ -9,7 +9,7 @@ const secretKey = process.env.SECRET_OR_KEY;
 const saltRounds = 10;
 
 const getUsers = (request, response) => {
-  pool.query('select * from public.user order by id asc', (err, results) => {
+  pool.query('select id, username from public.user order by id asc', (err, results) => {
     if (err) {
       throw err;
     }
@@ -136,6 +136,26 @@ const deleteUser = (request, response) => {
   });
 };
 
+const findUser = async (request, response) => {
+  const username = request.params.username;
+  console.log('findUser', username);
+  try {
+    if (!username) {
+      response.status(400).json({ message: 'No username passed' });
+    }
+
+    let result = await pool.query(
+      `select id, username from public.user where username like '%${username}%'`
+    );
+    console.log(result);
+
+    response.status(200).json({ users: result.rows });
+  } catch (err) {
+    response.status(500).json({ message: 'something went wrong' });
+    console.log('LOGIN ERR', err);
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -143,5 +163,6 @@ module.exports = {
   updateUser,
   deleteUser,
   updatePassword,
-  updatePassword_old
+  updatePassword_old,
+  findUser
 };
