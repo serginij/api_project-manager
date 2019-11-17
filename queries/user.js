@@ -11,7 +11,7 @@ const saltRounds = 10;
 const getUsers = (request, response) => {
   pool.query('select id, username from public.user order by id asc', (err, results) => {
     if (err) {
-      throw err;
+      response.status(500).send({ message: `Something went wrong`, ok: false });
     }
     console.log(results.rows);
     response.status(200).json(results.rows);
@@ -23,6 +23,7 @@ const getUserById = (request, response) => {
 
   pool.query('select username, email from public.user where id = $1', [id], (err, results) => {
     if (err) {
+      response.status(500).send({ message: `Something went wrong`, ok: false });
       throw err;
     }
     response.status(200).json(results.rows);
@@ -40,16 +41,16 @@ const createUser = (request, response) => {
       [username, email, hash],
       (err, results) => {
         if (err) {
-          response.status(500).send(`Something went wrong`);
+          response.status(500).send({ message: `Something went wrong`, ok: false });
           console.log(err.stack);
           throw err;
         }
         // console.log(results);
-        response.status(201).send(`User added successfully`);
+        response.status(201).send({ message: `User added successfully`, ok: true });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 
@@ -65,11 +66,11 @@ const updateUser = (request, response) => {
         if (err) {
           throw err;
         }
-        response.status(200).send(`User modified with id: ${id}`);
+        response.status(200).send({ message: `User modified with id: ${id}`, ok: true });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 
@@ -84,11 +85,13 @@ const updatePassword_old = (request, response) => {
         if (err) {
           throw err;
         }
-        response.status(200).send(`User's password modified with id: ${results.rows[0].id}`);
+        response
+          .status(200)
+          .send({ message: `User's password modified with id: ${results.rows[0].id}`, ok: true });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 
@@ -102,7 +105,7 @@ const updatePassword = async (request, response) => {
     let user = { ...result.rows[0] };
 
     if (!user) {
-      response.status(401).json({ message: 'no such user found' });
+      response.status(401).json({ message: 'no such user found', ok: false });
     }
 
     if (bcrypt.compareSync(password, user.password)) {
@@ -115,12 +118,14 @@ const updatePassword = async (request, response) => {
         id
       ]);
 
-      response.json({ message: 'Password was successfully updated', token: token });
+      response
+        .status(200)
+        .send({ message: 'Password was successfully updated', token: token, ok: true });
     } else {
-      response.status(401).json({ message: 'passwords did not match' });
+      response.status(401).send({ message: 'passwords did not match', ok: false });
     }
   } catch (err) {
-    response.status(500).json({ message: 'something went wrong' });
+    response.status(500).json({ message: 'something went wrong', ok: false });
     console.log('LOGIN ERR', err);
   }
 };
@@ -132,7 +137,7 @@ const deleteUser = (request, response) => {
     if (err) {
       throw err;
     }
-    response.status(200).send(`User deleted with id: ${id}`);
+    response.status(200).send({ message: `User deleted with id: ${id}`, ok: true });
   });
 };
 
@@ -149,9 +154,9 @@ const findUser = async (request, response) => {
     );
     console.log(result);
 
-    response.status(200).json({ users: result.rows });
+    response.status(200).json({ users: result.rows, ok: true });
   } catch (err) {
-    response.status(500).json({ message: 'something went wrong' });
+    response.status(500).json({ message: 'something went wrong', ok: false });
     console.log('LOGIN ERR', err);
   }
 };

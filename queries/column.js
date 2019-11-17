@@ -33,18 +33,18 @@ const createColumn = (request, response) => {
       [name, deskId],
       (err, results) => {
         if (err) {
-          response.status(500).send(`Something went wrong`);
+          response.status(500).send({ message: `Something went wrong`, ok: false });
           console.log(err.stack);
           throw err;
         }
         console.log(results);
         response
           .status(201)
-          .send({ message: `Column added successfully`, success: true, id: results.rows[0].id });
+          .send({ message: `Column added successfully`, ok: true, id: results.rows[0].id });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 
@@ -73,9 +73,10 @@ const deleteColumn = (request, response) => {
 
   pool.query('delete from public.column where id = $1', [id], (err, results) => {
     if (err) {
+      response.status(500).send({ message: `Something went wrong`, ok: false });
       throw err;
     }
-    response.status(200).send(`Column deleted with id: ${id}`);
+    response.status(200).send({ message: `Column deleted with id: ${id}`, ok: true });
   });
 };
 

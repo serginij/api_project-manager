@@ -10,18 +10,9 @@ const getTeamDesks = async (request, response) => {
       teamId
     ]);
 
-    // results.rows.map(async row => {
-    //   const users = await pool.query(
-    //     'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1))',
-    //     [row.id]
-    //   );
-
-    //   console.log(row);
-    // });
-
     response.status(200).json(results.rows);
   } catch (err) {
-    response.status(500).send(`Something went wrong`);
+    response.status(500).send({ message: `Something went wrong`, ok: false });
     console.log(err);
   }
 };
@@ -34,6 +25,7 @@ const getDeskUsers = (request, response) => {
     [deskId],
     (err, results) => {
       if (err) {
+        response.status(500).send({ message: `Something went wrong`, ok: false });
         throw err;
       }
       response.status(200).json(results.rows);
@@ -74,9 +66,9 @@ const getDesk = async (request, response) => {
     results.rows[0].columns = await Promise.all(promises);
     console.log('getDesk response', results.rows[0], colRes, cardRes);
 
-    response.status(200).send({ desk: results.rows[0], columns: colRes, cards: cardRes });
+    response.status(200).send({ desk: results.rows[0], columns: colRes, cards: cardRes, ok: true });
   } catch (err) {
-    response.status(500).send(`Something went wrong`);
+    response.status(500).send({ message: `Something went wrong`, ok: false });
     console.log(err);
   }
 };
@@ -91,18 +83,18 @@ const createDesk = (request, response) => {
       [name, teamId],
       (err, results) => {
         if (err) {
-          response.status(500).send(`Something went wrong`);
+          response.status(500).send({ message: `Something went wrong`, ok: false });
           console.log(err.stack);
           throw err;
         }
         console.log(results);
         response
           .status(201)
-          .send({ message: `Desk added successfully`, success: true, id: results.rows[0].id });
+          .send({ message: `Desk added successfully`, ok: true, id: results.rows[0].id });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 
@@ -118,11 +110,13 @@ const createDeskUser = (request, response) => {
         if (err) {
           throw err;
         }
-        response.status(200).send(`User (${id}) added to board successfully`);
+        response
+          .status(200)
+          .send({ message: `User (${id}) added to board successfully`, ok: true });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 
@@ -138,11 +132,11 @@ const deleteDeskUser = (request, response) => {
         if (err) {
           throw err;
         }
-        response.status(200).send(`Desk user deleted successfully`);
+        response.status(200).send({ message: `Desk user deleted successfully`, ok: true });
       }
     );
   } else {
-    response.status(400).send('Incorrect data');
+    response.status(400).send({ message: 'Incorrect data', ok: false });
   }
 };
 

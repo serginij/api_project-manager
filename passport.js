@@ -45,7 +45,7 @@ const login = async (req, res) => {
     console.log('user', user);
 
     if (!user) {
-      res.status(401).json({ message: 'no such user found' });
+      res.status(401).send({'no such user found', ok: false});
     }
 
     console.log('comparing', bcrypt.compareSync(password, user.password));
@@ -56,10 +56,10 @@ const login = async (req, res) => {
 
       res.json({ message: 'ok', token: token });
     } else {
-      res.status(401).json({ message: 'passwords did not match' });
+      res.status(401).send({ message: 'passwords did not match', ok: false });
     }
   } catch (err) {
-    res.status(500).json({ message: 'something went wrong' });
+    res.status(500).send({ message: 'something went wrong', ok: false });
     console.log('LOGIN ERR', err);
   }
 };
@@ -79,7 +79,7 @@ const signup = async (req, res) => {
     let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: 60 * 30 });
     res.json({ message: 'ok', token: token });
   } catch (err) {
-    res.status(500).json({ message: 'something went wrong' });
+    res.status(500).json({ message: 'something went wrong', ok: false });
     console.log('LOGIN ERR', err);
   }
 };
