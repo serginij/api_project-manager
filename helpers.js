@@ -6,7 +6,7 @@ const checkToken = (request, response) =>
   jwt.verify(request.headers.authorization.split(' ')[1], secretKey, (err, decoded) => {
     if (err) {
       console.log(err);
-      response.status(401).send({ message: 'No token passed', ok: false });
+      response.status(401).send({ message: 'Invalid token passed', ok: false });
     } else {
       console.log('success');
 

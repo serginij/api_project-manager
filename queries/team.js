@@ -60,6 +60,22 @@ const getTeams = async (request, response) => {
     console.log('response', teams);
     response.status(200).send({ teams: teams, desks: deskRes, ok: true });
   } catch (err) {
+    switch (err) {
+      case 400:
+        response.status(400).send({ message: 'Incorrect data', ok: false });
+        break;
+      case 403:
+        response.status(403).send({ message: 'Access denied', ok: false });
+        break;
+      case 500:
+        response.status(500).json({ message: 'Something went wrong', ok: false });
+        break;
+      case 401:
+        response.status(401).json({ message: 'Invalid token', ok: false });
+      default:
+        response.status(500).json({ message: 'Something went wrong', ok: false });
+        break;
+    }
     response.status(500).send({ message: 'Something went wrong', ok: false });
     console.log(err);
   }
@@ -196,7 +212,7 @@ const createTeamUser = async (request, response) => {
         response.status(200).json({
           message: `User (${userId}) added successfully to team ${teamId}`,
           is_admin: results.rows[0].is_admin,
-          success: true
+          ok: true
         });
       } else {
         response.status(400).send({ message: 'User already exists', ok: false });
@@ -268,6 +284,27 @@ const deleteTeamUser = async (request, response) => {
   }
 };
 
+const findTeamUser = async (request, response) => {
+  const { username, teamId } = request.params;
+  console.log('findUser', username);
+  try {
+    if (!username) {
+      response.status(400).json({ message: 'No username passed' });
+    }
+
+    let result = await pool.query(
+      `select id, username from public.user where id in (select user_id from team_user where team_id = ${teamId} and user_id in (select id from public.user where username like '%${username}%'))`
+      // `select id, username from team_user where team_id = ${teamId} and user_id in (select id from public.user where username like '%${username}%')`
+    );
+    console.log(result);
+
+    response.status(200).json({ users: result.rows, ok: true });
+  } catch (err) {
+    response.status(500).json({ message: 'something went wrong', ok: false });
+    console.log('LOGIN ERR', err);
+  }
+};
+
 module.exports = {
   getTeams,
   getTeamById,
@@ -276,5 +313,6 @@ module.exports = {
   deleteTeam,
   createTeamUser,
   updateTeamUser,
-  deleteTeamUser
+  deleteTeamUser,
+  findTeamUser
 };

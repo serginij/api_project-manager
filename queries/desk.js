@@ -1,4 +1,5 @@
 const db = require('../db');
+const helpers = require('../helpers');
 
 const pool = db.pool;
 
@@ -41,7 +42,12 @@ const getDesk = async (request, response) => {
     const columns = await pool.query('select id, name from public.column where desk_id = $1', [
       deskId
     ]);
-    console.log('getDesk columns', columns.rows);
+    const users = await pool.query(
+      'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1))',
+      [deskId]
+    );
+
+    console.log('getDesk columns, users', columns.rows, users.rows);
 
     let colRes = {};
     let cardRes = {};
@@ -52,7 +58,7 @@ const getDesk = async (request, response) => {
         [column.id]
       );
 
-      console.log('getDesk column & cards', column, cards.rows);
+      console.log('getDesk column & cards & users', column, cards.rows, users.rows[0]);
 
       colRes[column.id] = column;
       colRes[column.id].cards = [];
@@ -63,6 +69,7 @@ const getDesk = async (request, response) => {
       return column.id;
     });
 
+    results.rows[0].users = users.rows[0] ? [users.rows[0]] : [];
     results.rows[0].columns = await Promise.all(promises);
     console.log('getDesk response', results.rows[0], colRes, cardRes);
 
@@ -98,45 +105,135 @@ const createDesk = (request, response) => {
   }
 };
 
-const createDeskUser = (request, response) => {
-  const { userId, teamId, deskId } = request.body;
-  // change to only userId and deskId
+const updateDesk = async (request, response) => {
+  const deskId = parseInt(request.params.deskId);
+  const { name } = request.body;
 
-  if (userId && teamId && deskId) {
-    pool.query(
-      'insert into desk_user (team_user_id, desk_id) values (select id from team_user where user_id = $1 and team_id = $2, $3)',
-      [userId, teamId, deskId],
-      (err, results) => {
-        if (err) {
-          throw err;
-        }
-        response
-          .status(200)
-          .send({ message: `User (${id}) added to board successfully`, ok: true });
-      }
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  console.log('update desk', request.body, deskId);
+  try {
+    let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
     );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+    if (name && deskId && user.rows[0].is_admin) {
+      let results = await pool.query('update desk set name = $1 where id = $2', [name, deskId]);
+
+      response.status(200).send({ message: `Desk modified with id: ${deskId}`, ok: true });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    switch (err) {
+      case 400:
+        response.status(400).send({ message: 'Incorrect data', ok: false });
+        break;
+      case 403:
+        response.status(403).send({ message: 'Access denied', ok: false });
+        break;
+      case 500:
+        response.status(500).json({ message: 'Something went wrong', ok: false });
+        break;
+      case 401:
+        response.status(401).json({ message: 'Invalid token', ok: false });
+      default:
+        response.status(500).json({ message: 'Something went wrong', ok: false });
+        break;
+    }
+    console.log(err);
   }
 };
 
-const deleteDeskUser = (request, response) => {
+const createDeskUser = async (request, response) => {
   const deskId = parseInt(request.params.deskId);
-  const userId = parseInt(request.params.userId);
+  const { userId } = request.body;
 
-  if (deskId && userId) {
-    pool.query(
-      'delete from desk_user where id in (select id from team_user where user_id = $1 ) and desk_id = $2',
-      [userId, deskId],
-      (err, results) => {
-        if (err) {
-          throw err;
-        }
-        response.status(200).send({ message: `Desk user deleted successfully`, ok: true });
-      }
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  console.log('creteDeskUser', userId, deskId);
+  try {
+    let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
     );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+    if (userId && deskId) {
+      let user = await pool.query(
+        'select id from desk_user where team_user_id = (select id from team_user where user_id = $1 and team_id = $2) and desk_id = $3',
+        [userId, teamId.rows[0].team_id, deskId]
+      );
+
+      if (!user.rows.length) {
+        let results = await pool.query(
+          'insert into desk_user (team_user_id, desk_id) values ((select id from team_user where team_id = $1 and user_id = $2), $3)',
+          [teamId.rows[0].team_id, userId, deskId]
+        );
+
+        Promise.all(results);
+
+        response.status(200).json({
+          message: `User (${userId}) added successfully to desk ${deskId}`,
+          ok: true
+        });
+      } else {
+        throw 400;
+      }
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    switch (err) {
+      case 400:
+        response.status(400).send({ message: 'Incorrect data', ok: false });
+        break;
+      case 403:
+        response.status(403).send({ message: 'Access denied', ok: false });
+        break;
+      case 500:
+        response.status(500).json({ message: 'Something went wrong', ok: false });
+        break;
+      default:
+        response.status(500).json({ message: 'Something went wrong', ok: false });
+        break;
+    }
+
+    console.log(err);
+  }
+};
+
+const deleteDeskUser = async (request, response) => {
+  const { deskId, userId } = parseInt(request.params);
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  try {
+    let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
+    );
+    if (!user.rows[0].is_admin) {
+      response.status(403).send({ message: 'Access denied', ok: false });
+    }
+    if (deskId && userId) {
+      let results = await pool.query(
+        'delete from desk_user where desk_id = $1 and team_user_id = (select id from team_user where team_id = $2 and user_id = $3)',
+        [deskId, teamId.rows[0].team_id, userId]
+      );
+
+      response.status(200).send({ message: `Desk user deleted successfully`, ok: true });
+    } else {
+      response.status(400).send({ message: 'Incorrect data', ok: false });
+    }
+  } catch (err) {
+    response.status(500).send({ message: 'Something went wrong', ok: false });
   }
 };
 
@@ -146,5 +243,6 @@ module.exports = {
   createDesk,
   createDeskUser,
   deleteDeskUser,
-  getDesk
+  getDesk,
+  updateDesk
 };
