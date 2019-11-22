@@ -1,4 +1,5 @@
 const db = require('../db');
+const helpers = require('../helpers');
 
 const pool = db.pool;
 
@@ -17,12 +18,12 @@ const createCard = async (request, response) => {
       console.log(results, card_user);
       response
         .status(201)
-        .send({ message: `Card added successfully`, success: true, id: results.rows[0].id });
+        .send({ message: `Card added successfully`, ok: true, id: results.rows[0].id });
     } else {
-      response.status(400).send({ message: 'Incorrect data' });
+      response.status(400).send({ message: 'Incorrect data', ok: false });
     }
   } catch (err) {
-    response.status(500).send({ message: `Something went wrong` });
+    response.status(500).send({ message: `Something went wrong`, ok: false });
     console.log(err);
   }
 };
@@ -32,9 +33,10 @@ const deleteCard = (request, response) => {
 
   pool.query('delete from card where id = $1', [id], (err, results) => {
     if (err) {
+      response.status(500).send({ message: 'Something went wrong', ok: false });
       throw err;
     }
-    response.status(200).send({ message: `Card deleted with id: ${id}` });
+    response.status(200).send({ message: `Card deleted with id: ${id}`, ok: true });
   });
 };
 
@@ -53,15 +55,12 @@ const updateCard = async (request, response) => {
         id
       ]);
 
-      response.status(201).send({ message: `Card updated successfully`, success: true, id: id });
+      response.status(201).send({ message: `Card updated successfully`, ok: true, id: id });
     } else {
       throw 400;
     }
   } catch (err) {
-    err == 400
-      ? response.status(400).send({ message: 'Incorrect data' })
-      : response.status(500).send({ message: `Something went wrong` });
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 
