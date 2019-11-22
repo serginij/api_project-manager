@@ -1,15 +1,13 @@
 const db = require('./db');
 require('dotenv').config();
-
-const pool = db.pool;
-
 const jwt = require('jsonwebtoken');
-
 const passport = require('passport');
 const passportJWT = require('passport-jwt');
-
 const bcrypt = require('bcrypt');
+
+const pool = db.pool;
 const saltRounds = 10;
+const tokenLifeTime = 60 * 60;
 
 const ExtractJwt = passportJWT.ExtractJwt;
 const JwtStrategy = passportJWT.Strategy;
@@ -52,7 +50,7 @@ const login = async (req, res) => {
 
     if (bcrypt.compareSync(password, user.password)) {
       let payload = { id: user.id, username: user.username };
-      let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: 60 * 30 });
+      let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: tokenLifeTime });
 
       res.status(200).json({ ok: true, token: token });
     } else {
@@ -76,7 +74,7 @@ const signup = async (req, res) => {
     console.log('user', user);
 
     let payload = { id: user.id, username: user.username };
-    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: 60 * 30 });
+    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: tokenLifeTime });
     res.json({ message: 'ok', token: token });
   } catch (err) {
     res.status(500).json({ message: 'something went wrong', ok: false });

@@ -14,4 +14,32 @@ const checkToken = (request, response) =>
     }
   });
 
-module.exports = { checkToken };
+const handleErrors = (
+  response,
+  messages = {
+    400: 'Incorrect data',
+    403: 'Access denied',
+    500: 'Something went wrong',
+    401: 'Invalid token'
+  }
+) => {
+  switch (err) {
+    case 400:
+      response.status(400).send({ message: messages[400], ok: false });
+      break;
+    case 403:
+      response.status(403).send({ message: messages[403], ok: false });
+      break;
+    case 500:
+      response.status(500).json({ message: messages[500], ok: false });
+      break;
+    case 401:
+      response.status(401).json({ message: messages[401], ok: false });
+    default:
+      response.status(500).json({ message: messages[500], ok: false });
+      break;
+  }
+  console.log(err);
+};
+
+module.exports = { checkToken, handleErrors };

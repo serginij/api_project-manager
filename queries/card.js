@@ -1,4 +1,5 @@
 const db = require('../db');
+const helpers = require('../helpers');
 
 const pool = db.pool;
 
@@ -59,10 +60,7 @@ const updateCard = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    err == 400
-      ? response.status(400).send({ message: 'Incorrect data', ok: false })
-      : response.status(500).send({ message: `Something went wrong`, ok: false });
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 

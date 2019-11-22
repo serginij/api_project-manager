@@ -1,9 +1,7 @@
 const db = require('../db');
 const desk = require('./desk');
-
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-
 const helpers = require('../helpers');
 
 const pool = db.pool;
@@ -57,27 +55,9 @@ const getTeams = async (request, response) => {
 
     await Promise.all(promises);
 
-    console.log('response', teams);
     response.status(200).send({ teams: teams, desks: deskRes, ok: true });
   } catch (err) {
-    switch (err) {
-      case 400:
-        response.status(400).send({ message: 'Incorrect data', ok: false });
-        break;
-      case 403:
-        response.status(403).send({ message: 'Access denied', ok: false });
-        break;
-      case 500:
-        response.status(500).json({ message: 'Something went wrong', ok: false });
-        break;
-      case 401:
-        response.status(401).json({ message: 'Invalid token', ok: false });
-      default:
-        response.status(500).json({ message: 'Something went wrong', ok: false });
-        break;
-    }
-    response.status(500).send({ message: 'Something went wrong', ok: false });
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 
@@ -143,14 +123,14 @@ const updateTeam = async (request, response) => {
 
   const { user_id, username } = helpers.checkToken(request, response);
 
-  console.log('update team', request.body, id);
+  // console.log('update team', request.body, id);
   try {
     let user = await pool.query(
       'select is_admin from team_user where user_id = $1 and team_id = $2',
       [user_id, id]
     );
     if (!user.rows[0].is_admin) {
-      response.status(403).send({ message: 'Access denied', ok: false });
+      throw 403;
     }
     if (name && id) {
       let results = await pool.query('update team set name = $1, "desc" = $2 where id = $3', [
@@ -161,11 +141,10 @@ const updateTeam = async (request, response) => {
 
       response.status(200).send({ message: `Team modified with id: ${id}`, ok: true });
     } else {
-      response.status(400).send({ message: 'Incorrect data', ok: false });
+      throw 400;
     }
   } catch (err) {
-    response.status(500).send({ message: 'Something went wrong', ok: false });
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 
@@ -186,14 +165,13 @@ const createTeamUser = async (request, response) => {
 
   const { user_id, username } = helpers.checkToken(request, response);
 
-  console.log('creteTeamUser', userId, teamId);
   try {
     let user = await pool.query(
       'select is_admin from team_user where user_id = $1 and team_id = $2',
       [user_id, teamId]
     );
     if (!user.rows[0].is_admin) {
-      response.status(403).send({ message: 'Access denied', ok: false });
+      throw 403;
     }
     if (userId && teamId) {
       let user = await pool.query('select id from team_user where user_id = $1 and team_id = $2', [
@@ -215,14 +193,13 @@ const createTeamUser = async (request, response) => {
           ok: true
         });
       } else {
-        response.status(400).send({ message: 'User already exists', ok: false });
+        throw 400;
       }
     } else {
-      response.status(400).send({ message: 'Incorrect data', ok: false });
+      throw 400;
     }
   } catch (err) {
-    response.status(500).json({ message: 'Something went wrong', ok: false });
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 
@@ -239,7 +216,7 @@ const updateTeamUser = async (request, response) => {
       [user_id, teamId]
     );
     if (!user.rows[0].is_admin) {
-      response.status(403).send({ message: 'Access denied', ok: false });
+      throw 403;
     }
     if (teamId && userId && isAdmin !== undefined) {
       let results = await pool.query(
@@ -248,10 +225,10 @@ const updateTeamUser = async (request, response) => {
       );
       response.status(200).send({ message: `Team user ${userId} modified with`, ok: true });
     } else {
-      response.status(400).send({ message: 'Incorrect data', ok: false });
+      throw 500;
     }
   } catch (err) {
-    response.status(500).send({ message: 'Something went wrong', ok: false });
+    helpers.handleErrors(err);
   }
 };
 
@@ -267,7 +244,7 @@ const deleteTeamUser = async (request, response) => {
       [user_id, teamId]
     );
     if (!user.rows[0].is_admin) {
-      response.status(403).send({ message: 'Access denied', ok: false });
+      throw 403;
     }
     if (teamId && userId) {
       let results = await pool.query('delete from team_user where team_id = $1 and user_id = $2', [
@@ -277,10 +254,10 @@ const deleteTeamUser = async (request, response) => {
 
       response.status(200).send({ message: `Team user deleted successfully`, ok: true });
     } else {
-      response.status(400).send({ message: 'Incorrect data', ok: false });
+      throw 400;
     }
   } catch (err) {
-    response.status(500).send({ message: 'Something went wrong', ok: false });
+    helpers.handleErrors(err);
   }
 };
 
@@ -289,19 +266,17 @@ const findTeamUser = async (request, response) => {
   console.log('findUser', username);
   try {
     if (!username) {
-      response.status(400).json({ message: 'No username passed' });
+      throw 400;
     }
 
     let result = await pool.query(
       `select id, username from public.user where id in (select user_id from team_user where team_id = ${teamId} and user_id in (select id from public.user where username like '%${username}%'))`
-      // `select id, username from team_user where team_id = ${teamId} and user_id in (select id from public.user where username like '%${username}%')`
     );
     console.log(result);
 
     response.status(200).json({ users: result.rows, ok: true });
   } catch (err) {
-    response.status(500).json({ message: 'something went wrong', ok: false });
-    console.log('LOGIN ERR', err);
+    helpers.handleErrors(err);
   }
 };
 

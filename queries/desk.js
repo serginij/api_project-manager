@@ -129,23 +129,7 @@ const updateDesk = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    switch (err) {
-      case 400:
-        response.status(400).send({ message: 'Incorrect data', ok: false });
-        break;
-      case 403:
-        response.status(403).send({ message: 'Access denied', ok: false });
-        break;
-      case 500:
-        response.status(500).json({ message: 'Something went wrong', ok: false });
-        break;
-      case 401:
-        response.status(401).json({ message: 'Invalid token', ok: false });
-      default:
-        response.status(500).json({ message: 'Something went wrong', ok: false });
-        break;
-    }
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 
@@ -190,22 +174,7 @@ const createDeskUser = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    switch (err) {
-      case 400:
-        response.status(400).send({ message: 'Incorrect data', ok: false });
-        break;
-      case 403:
-        response.status(403).send({ message: 'Access denied', ok: false });
-        break;
-      case 500:
-        response.status(500).json({ message: 'Something went wrong', ok: false });
-        break;
-      default:
-        response.status(500).json({ message: 'Something went wrong', ok: false });
-        break;
-    }
-
-    console.log(err);
+    helpers.handleErrors(err);
   }
 };
 
@@ -220,7 +189,7 @@ const deleteDeskUser = async (request, response) => {
       [user_id, teamId.rows[0].team_id]
     );
     if (!user.rows[0].is_admin) {
-      response.status(403).send({ message: 'Access denied', ok: false });
+      throw 403;
     }
     if (deskId && userId) {
       let results = await pool.query(
@@ -230,10 +199,10 @@ const deleteDeskUser = async (request, response) => {
 
       response.status(200).send({ message: `Desk user deleted successfully`, ok: true });
     } else {
-      response.status(400).send({ message: 'Incorrect data', ok: false });
+      throw 400;
     }
   } catch (err) {
-    response.status(500).send({ message: 'Something went wrong', ok: false });
+    helpers.handleErrors(err);
   }
 };
 

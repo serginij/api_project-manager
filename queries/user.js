@@ -1,6 +1,6 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
-
+const helpers = require('../helpers');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -30,30 +30,6 @@ const getUserById = (request, response) => {
   });
 };
 
-const createUser = (request, response) => {
-  const { username, email, password } = request.body;
-
-  console.log(request.body);
-  if (username && password) {
-    let hash = bcrypt.hashSync(myPlaintextPassword, saltRounds);
-    pool.query(
-      'insert into public.user (username, email, password) values ($1, $2, $3)',
-      [username, email, hash],
-      (err, results) => {
-        if (err) {
-          response.status(500).send({ message: `Something went wrong`, ok: false });
-          console.log(err.stack);
-          throw err;
-        }
-        // console.log(results);
-        response.status(201).send({ message: `User added successfully`, ok: true });
-      }
-    );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
-  }
-};
-
 const updateUser = (request, response) => {
   const id = parseInt(request.params.id);
   const { username, email } = request.body;
@@ -67,27 +43,6 @@ const updateUser = (request, response) => {
           throw err;
         }
         response.status(200).send({ message: `User modified with id: ${id}`, ok: true });
-      }
-    );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
-  }
-};
-
-const updatePassword_old = (request, response) => {
-  const { username, password, newPassword } = request.body;
-  let hash = bcrypt.hashSync(newPassword, saltRounds);
-  if (newPassword) {
-    pool.query(
-      'update public.user set password = $1 where username = $2 returning id',
-      [hash, username],
-      (err, results) => {
-        if (err) {
-          throw err;
-        }
-        response
-          .status(200)
-          .send({ message: `User's password modified with id: ${results.rows[0].id}`, ok: true });
       }
     );
   } else {
@@ -125,8 +80,7 @@ const updatePassword = async (request, response) => {
       response.status(401).send({ message: 'passwords did not match', ok: false });
     }
   } catch (err) {
-    response.status(500).json({ message: 'something went wrong', ok: false });
-    console.log('LOGIN ERR', err);
+    helpers.handleErrors(err);
   }
 };
 
@@ -164,10 +118,8 @@ const findUser = async (request, response) => {
 module.exports = {
   getUsers,
   getUserById,
-  createUser,
   updateUser,
   deleteUser,
   updatePassword,
-  updatePassword_old,
   findUser
 };

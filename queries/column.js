@@ -1,4 +1,5 @@
 const db = require('../db');
+const helpers = require('../helpers');
 
 const pool = db.pool;
 
@@ -23,28 +24,24 @@ const pool = db.pool;
 //   });
 // };
 
-const createColumn = (request, response) => {
+const createColumn = async (request, response) => {
   const { name, deskId } = request.body;
 
-  console.log(request.body);
-  if (name && deskId) {
-    pool.query(
-      'insert into public.column (name, desk_id) values ($1, $2) returning id',
-      [name, deskId],
-      (err, results) => {
-        if (err) {
-          response.status(500).send({ message: `Something went wrong`, ok: false });
-          console.log(err.stack);
-          throw err;
-        }
-        console.log(results);
-        response
-          .status(201)
-          .send({ message: `Column added successfully`, ok: true, id: results.rows[0].id });
-      }
-    );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
+  try {
+    if (name && deskId) {
+      const results = await pool.query(
+        'insert into public.column (name, desk_id) values ($1, $2) returning id',
+        [name, deskId]
+      );
+
+      response
+        .status(201)
+        .send({ message: `Column added successfully`, ok: true, id: results.rows[0].id });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(err);
   }
 };
 
