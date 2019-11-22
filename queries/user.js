@@ -80,7 +80,7 @@ const updatePassword = async (request, response) => {
       response.status(401).send({ message: 'passwords did not match', ok: false });
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 

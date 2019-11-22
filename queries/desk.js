@@ -129,7 +129,7 @@ const updateDesk = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -174,7 +174,7 @@ const createDeskUser = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -202,7 +202,7 @@ const deleteDeskUser = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 

@@ -41,7 +41,7 @@ const createColumn = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 

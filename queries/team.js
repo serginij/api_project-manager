@@ -57,7 +57,7 @@ const getTeams = async (request, response) => {
 
     response.status(200).send({ teams: teams, desks: deskRes, ok: true });
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -144,7 +144,7 @@ const updateTeam = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -199,7 +199,7 @@ const createTeamUser = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -228,7 +228,7 @@ const updateTeamUser = async (request, response) => {
       throw 500;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -257,7 +257,7 @@ const deleteTeamUser = async (request, response) => {
       throw 400;
     }
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 
@@ -276,7 +276,7 @@ const findTeamUser = async (request, response) => {
 
     response.status(200).json({ users: result.rows, ok: true });
   } catch (err) {
-    helpers.handleErrors(err);
+    helpers.handleErrors(response, err);
   }
 };
 

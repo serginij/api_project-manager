@@ -16,6 +16,7 @@ const checkToken = (request, response) =>
 
 const handleErrors = (
   response,
+  err,
   messages = {
     400: 'Incorrect data',
     403: 'Access denied',
