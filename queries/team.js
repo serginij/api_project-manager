@@ -26,7 +26,7 @@ const getTeams = async (request, response) => {
       const team = await pool.query('select * from team where id = $1', [t.id]);
 
       const users = await pool.query(
-        'select public.user.id, username, team_user.is_admin from public.user join team_user on public.user.id=team_user.user_id where public.user.id in (select user_id from team_user where team_id=$1)',
+        'select public.user.id, username, team_user.is_admin from public.user join team_user on public.user.id=team_user.user_id where public.user.id in (select user_id from team_user where team_id=$1) and team_user.team_id = $1',
         [t.id]
       );
 
@@ -218,7 +218,7 @@ const updateTeamUser = async (request, response) => {
     if (!user.rows[0].is_admin) {
       throw 403;
     }
-    if (teamId && userId && isAdmin !== undefined) {
+    if (teamId && userId && isAdmin !== undefined && userId !== user_id) {
       let results = await pool.query(
         'update team_user set is_admin = $1 where team_id = $2 and user_id = $3',
         [isAdmin, teamId, userId]

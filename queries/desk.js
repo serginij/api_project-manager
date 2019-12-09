@@ -155,7 +155,7 @@ const createDeskUser = async (request, response) => {
         [userId, teamId.rows[0].team_id, deskId]
       );
 
-      if (!user.rows.length) {
+      if (user.rows.length) {
         let results = await pool.query(
           'insert into desk_user (team_user_id, desk_id) values ((select id from team_user where team_id = $1 and user_id = $2), $3)',
           [teamId.rows[0].team_id, userId, deskId]
