@@ -5,6 +5,7 @@ const pool = db.pool;
 
 const createCard = async (request, response) => {
   const { name, columnId } = request.body;
+  console.log('createCard', request.params, request.body);
 
   try {
     if (name && columnId) {
@@ -30,6 +31,8 @@ const createCard = async (request, response) => {
 
 const deleteCard = (request, response) => {
   const id = parseInt(request.params.id);
+  console.log('deleteCard', request.params, request.body);
+
   try {
     pool.query('delete from card where id = $1', [id], (err, results) => {
       if (err) {
@@ -46,8 +49,7 @@ const deleteCard = (request, response) => {
 const updateCard = async (request, response) => {
   const id = parseInt(request.params.id);
   const { name, columnId } = request.body;
-
-  console.log(request.body, request.params);
+  console.log('updateCard', request.body, request.params);
 
   try {
     if (id && name && columnId) {

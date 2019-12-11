@@ -9,6 +9,7 @@ const secretKey = process.env.SECRET_OR_KEY;
 const saltRounds = 10;
 
 const getUsers = (request, response) => {
+  console.log('getUsers', request.params, request.body);
   pool.query('select id, username from public.user order by id asc', (err, results) => {
     if (err) {
       response.status(500).send({ message: `Something went wrong`, ok: false });
@@ -19,6 +20,7 @@ const getUsers = (request, response) => {
 
 const getUserById = (request, response) => {
   const id = parseInt(request.params.id);
+  console.log('getUserById', request.params, request.body);
 
   pool.query('select username, email from public.user where id = $1', [id], (err, results) => {
     if (err) {
@@ -32,6 +34,7 @@ const getUserById = (request, response) => {
 const updateUser = (request, response) => {
   const id = parseInt(request.params.id);
   const { username, email } = request.body;
+  console.log('updateUser', request.params, request.body);
 
   if (username && id) {
     pool.query(
@@ -51,6 +54,7 @@ const updateUser = (request, response) => {
 
 const updatePassword = async (request, response) => {
   const { password, newPassword } = request.body;
+  console.log('updatePassword', request.params, request.body);
   const { id, username } = jwt.verify(request.headers.authorization.split(' ')[1], secretKey);
 
   try {
@@ -85,6 +89,7 @@ const updatePassword = async (request, response) => {
 
 const deleteUser = (request, response) => {
   const id = parseInt(request.params.id);
+  console.log('deleteUser', request.params, request.body);
 
   pool.query('delete from public.user where id = $1', [id], (err, results) => {
     if (err) {
@@ -96,6 +101,8 @@ const deleteUser = (request, response) => {
 
 const findUser = async (request, response) => {
   const username = request.params.username;
+  console.log('findUser', request.params, request.body);
+
   try {
     if (!username) {
       response.status(400).json({ message: 'No username passed' });

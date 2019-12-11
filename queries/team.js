@@ -9,6 +9,7 @@ const pool = db.pool;
 const secretKey = process.env.SECRET_OR_KEY;
 
 const getTeams = async (request, response) => {
+  console.log('getTeams', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -61,6 +62,7 @@ const getTeams = async (request, response) => {
 
 const getTeamById = async (request, response) => {
   const id = parseInt(request.params.id);
+  console.log('getTeamById', request.params, request.body);
 
   try {
     const results = await pool.query('select * from team where id = $1', [id]);
@@ -88,6 +90,8 @@ const getTeamById = async (request, response) => {
 
 const createTeam = async (request, response) => {
   const { name, desc } = request.body;
+
+  console.log('createTeam', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -117,6 +121,7 @@ const createTeam = async (request, response) => {
 const updateTeam = async (request, response) => {
   const id = parseInt(request.params.id);
   const { name, desc } = request.body;
+  console.log('updateTeam', request.params, request.body);
 
   const { user_id, username } = helpers.checkToken(request, response);
 
@@ -146,6 +151,8 @@ const updateTeam = async (request, response) => {
 
 const deleteTeam = async (request, response) => {
   const { id } = parseInt(request.params);
+
+  console.log('deleteTeam', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -171,6 +178,7 @@ const deleteTeam = async (request, response) => {
 const createTeamUser = async (request, response) => {
   const teamId = parseInt(request.params.teamId);
   const { userId } = request.body;
+  console.log('createTeamUser', request.params, request.body);
 
   const { user_id, username } = helpers.checkToken(request, response);
 
@@ -216,6 +224,7 @@ const updateTeamUser = async (request, response) => {
   const teamId = parseInt(request.params.teamId);
   const userId = parseInt(request.params.userId);
   const { isAdmin } = request.body;
+  console.log('updateTeamUser', request.params, request.body);
 
   const { user_id, username } = helpers.checkToken(request, response);
 
@@ -244,6 +253,7 @@ const updateTeamUser = async (request, response) => {
 const deleteTeamUser = async (request, response) => {
   const teamId = parseInt(request.params.teamId);
   const userId = parseInt(request.params.userId);
+  console.log('deleteTeamUser', request.params, request.body);
 
   const { user_id, username } = helpers.checkToken(request, response);
 
@@ -272,6 +282,7 @@ const deleteTeamUser = async (request, response) => {
 
 const findTeamUser = async (request, response) => {
   const { username, teamId } = request.params;
+  console.log('findTeamUser', request.params, request.body);
 
   try {
     if (!username) {

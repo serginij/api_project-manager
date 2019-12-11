@@ -26,6 +26,7 @@ const pool = db.pool;
 
 const createColumn = async (request, response) => {
   const { name, deskId } = request.body;
+  console.log('createColumn', request.params, request.body);
 
   try {
     if (name && deskId) {
@@ -67,6 +68,8 @@ const createColumn = async (request, response) => {
 
 const deleteColumn = (request, response) => {
   const id = parseInt(request.params.id);
+  console.log('deleteColumn', request.params, request.body);
+
   try {
     pool.query('delete from public.column where id = $1', [id], (err, results) => {
       if (err) {

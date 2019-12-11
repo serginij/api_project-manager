@@ -5,6 +5,7 @@ const pool = db.pool;
 
 const getTeamDesks = async (request, response) => {
   const teamId = parseInt(request.params.teamId);
+  console.log('getTeamDesks', request.params, request.body);
 
   try {
     const results = await pool.query('select * from desk where team_id = $1 order by id asc', [
@@ -20,6 +21,8 @@ const getTeamDesks = async (request, response) => {
 
 const getDeskUsers = (request, response) => {
   const deskId = parseInt(request.params.id);
+  console.log('getDeskUsers', request.params, request.body);
+
   try {
     pool.query(
       'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1 ))',
@@ -39,6 +42,8 @@ const getDeskUsers = (request, response) => {
 
 const getDesk = async (request, response) => {
   const deskId = parseInt(request.params.deskId);
+  console.log('getDesk', request.params, request.body);
+
   try {
     const results = await pool.query('select * from desk where id = $1', [deskId]);
 
@@ -80,6 +85,7 @@ const getDesk = async (request, response) => {
 
 const createDesk = (request, response) => {
   const { name, teamId } = request.body;
+  console.log('createDesk', request.params, request.body);
 
   try {
     if (name && teamId) {
@@ -109,9 +115,10 @@ const updateDesk = async (request, response) => {
   const deskId = parseInt(request.params.deskId);
   const { name } = request.body;
 
+  console.log('updateDesk', deskId, name);
   const { user_id, username } = helpers.checkToken(request, response);
 
-  console.log('update desk', request.body, deskId);
+  console.log('update desk', request.params, request.body);
   try {
     let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
     let user = await pool.query(
@@ -137,6 +144,7 @@ const createDeskUser = async (request, response) => {
   const deskId = parseInt(request.params.deskId);
   const { userId } = request.body;
 
+  console.log('createDeskUser', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -179,6 +187,8 @@ const createDeskUser = async (request, response) => {
 
 const deleteDeskUser = async (request, response) => {
   const { deskId, userId } = parseInt(request.params);
+
+  console.log('deleteDeskUser', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -207,6 +217,8 @@ const deleteDeskUser = async (request, response) => {
 
 const deleteDesk = async (request, response) => {
   const deskId = parseInt(request.params.deskId);
+
+  console.log('deleteDesk', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
