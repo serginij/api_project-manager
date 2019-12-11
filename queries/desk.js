@@ -14,24 +14,27 @@ const getTeamDesks = async (request, response) => {
     response.status(200).json(results.rows);
   } catch (err) {
     response.status(500).send({ message: `Something went wrong`, ok: false });
-    console.log(err);
+    console.log('getTeamDesks', err);
   }
 };
 
 const getDeskUsers = (request, response) => {
   const deskId = parseInt(request.params.id);
-
-  pool.query(
-    'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1 ))',
-    [deskId],
-    (err, results) => {
-      if (err) {
-        response.status(500).send({ message: `Something went wrong`, ok: false });
-        throw err;
+  try {
+    pool.query(
+      'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1 ))',
+      [deskId],
+      (err, results) => {
+        if (err) {
+          throw err;
+        }
+        response.status(200).json(results.rows);
       }
-      response.status(200).json(results.rows);
-    }
-  );
+    );
+  } catch (err) {
+    response.status(500).send({ message: `Something went wrong`, ok: false });
+    console.log('getDeskUsers', err);
+  }
 };
 
 const getDesk = async (request, response) => {
@@ -47,8 +50,6 @@ const getDesk = async (request, response) => {
       [deskId]
     );
 
-    console.log('getDesk columns, users', columns.rows, users.rows);
-
     let colRes = {};
     let cardRes = {};
 
@@ -57,8 +58,6 @@ const getDesk = async (request, response) => {
         'select * from card where id in (select card_id from card_user where column_id = $1)',
         [column.id]
       );
-
-      console.log('getDesk column & cards & users', column, cards.rows, users.rows[0]);
 
       colRes[column.id] = column;
       colRes[column.id].cards = [];
@@ -71,37 +70,38 @@ const getDesk = async (request, response) => {
 
     results.rows[0].users = users.rows[0] ? [users.rows[0]] : [];
     results.rows[0].columns = await Promise.all(promises);
-    console.log('getDesk response', results.rows[0], colRes, cardRes);
 
     response.status(200).send({ desk: results.rows[0], columns: colRes, cards: cardRes, ok: true });
   } catch (err) {
     response.status(500).send({ message: `Something went wrong`, ok: false });
-    console.log(err);
+    console.log('getDesk', err);
   }
 };
 
 const createDesk = (request, response) => {
   const { name, teamId } = request.body;
 
-  console.log(request.body);
-  if (name && teamId) {
-    pool.query(
-      'insert into desk (name, team_id) values ($1, $2) returning id',
-      [name, teamId],
-      (err, results) => {
-        if (err) {
-          response.status(500).send({ message: `Something went wrong`, ok: false });
-          console.log(err.stack);
-          throw err;
+  try {
+    if (name && teamId) {
+      pool.query(
+        'insert into desk (name, team_id) values ($1, $2) returning id',
+        [name, teamId],
+        (err, results) => {
+          if (err) {
+            response.status(500).send({ message: `Something went wrong`, ok: false });
+            throw err;
+          }
+          console.log(results);
+          response
+            .status(201)
+            .send({ message: `Desk added successfully`, ok: true, id: results.rows[0].id });
         }
-        console.log(results);
-        response
-          .status(201)
-          .send({ message: `Desk added successfully`, ok: true, id: results.rows[0].id });
-      }
-    );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
+      );
+    } else {
+      response.status(400).send({ message: 'Incorrect data', ok: false });
+    }
+  } catch (err) {
+    console.log('createDesk', err);
   }
 };
 
@@ -139,7 +139,6 @@ const createDeskUser = async (request, response) => {
 
   const { user_id, username } = helpers.checkToken(request, response);
 
-  console.log('creteDeskUser', userId, deskId);
   try {
     let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
     let user = await pool.query(
@@ -150,10 +149,10 @@ const createDeskUser = async (request, response) => {
       throw 403;
     }
     if (userId && deskId) {
-      let user = await pool.query(
-        'select id from desk_user where team_user_id = (select id from team_user where user_id = $1 and team_id = $2) and desk_id = $3',
-        [userId, teamId.rows[0].team_id, deskId]
-      );
+      let user = await pool.query('select id from team_user where user_id = $1 and team_id = $2', [
+        userId,
+        teamId.rows[0].team_id
+      ]);
 
       if (user.rows.length) {
         let results = await pool.query(
@@ -206,6 +205,31 @@ const deleteDeskUser = async (request, response) => {
   }
 };
 
+const deleteDesk = async (request, response) => {
+  const deskId = parseInt(request.params.deskId);
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  try {
+    let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
+    );
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+    if (deskId) {
+      let results = await pool.query('delete from desk where id = $1', [deskId]);
+
+      response.status(200).send({ message: `Desk deleted successfully`, ok: true });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+  }
+};
+
 module.exports = {
   getTeamDesks,
   getDeskUsers,
@@ -213,5 +237,6 @@ module.exports = {
   createDeskUser,
   deleteDeskUser,
   getDesk,
-  updateDesk
+  updateDesk,
+  deleteDesk
 };

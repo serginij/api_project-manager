@@ -78,7 +78,7 @@ const signup = async (req, res) => {
     res.json({ message: 'ok', token: token });
   } catch (err) {
     res.status(500).json({ message: 'something went wrong', ok: false });
-    console.log('LOGIN ERR', err);
+    console.log('SIGNUP ERR', err);
   }
 };
 

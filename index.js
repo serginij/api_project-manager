@@ -45,7 +45,7 @@ app.get('/teams', withAuth(queries.getTeams));
 app.get('/teams/:id', queries.getTeamById);
 app.post('/teams', withAuth(queries.createTeam));
 app.put('/teams/:id', withAuth(queries.updateTeam));
-app.delete('/teams/:id', queries.deleteTeam);
+app.delete('/teams/:id', withAuth(queries.deleteTeam));
 
 app.get('/teams/:teamId/user/find/:username', queries.findTeamUser);
 
@@ -58,6 +58,8 @@ app.get('/teams/:teamId/desks', queries.getTeamDesks);
 app.post('/desks', queries.createDesk);
 app.get('/desks/:deskId', queries.getDesk);
 app.put('/desks/:deskId', withAuth(queries.updateDesk));
+app.delete('/desks/:deskId', withAuth(queries.deleteDesk));
+
 app.delete('/desks/:deskId/users/:userId', withAuth(queries.deleteDeskUser));
 app.get('/desks/:deskId/users', queries.getDeskUsers);
 app.post('/desks/:deskId/users', withAuth(queries.createDeskUser));

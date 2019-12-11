@@ -13,7 +13,6 @@ const getUsers = (request, response) => {
     if (err) {
       response.status(500).send({ message: `Something went wrong`, ok: false });
     }
-    console.log(results.rows);
     response.status(200).json(results.rows);
   });
 };
@@ -97,7 +96,6 @@ const deleteUser = (request, response) => {
 
 const findUser = async (request, response) => {
   const username = request.params.username;
-  console.log('findUser', username);
   try {
     if (!username) {
       response.status(400).json({ message: 'No username passed' });
@@ -106,7 +104,6 @@ const findUser = async (request, response) => {
     let result = await pool.query(
       `select id, username from public.user where username like '%${username}%'`
     );
-    console.log(result);
 
     response.status(200).json({ users: result.rows, ok: true });
   } catch (err) {

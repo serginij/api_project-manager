@@ -67,14 +67,17 @@ const createColumn = async (request, response) => {
 
 const deleteColumn = (request, response) => {
   const id = parseInt(request.params.id);
-
-  pool.query('delete from public.column where id = $1', [id], (err, results) => {
-    if (err) {
-      response.status(500).send({ message: `Something went wrong`, ok: false });
-      throw err;
-    }
-    response.status(200).send({ message: `Column deleted with id: ${id}`, ok: true });
-  });
+  try {
+    pool.query('delete from public.column where id = $1', [id], (err, results) => {
+      if (err) {
+        throw err;
+      }
+      response.status(200).send({ message: `Column deleted with id: ${id}`, ok: true });
+    });
+  } catch (err) {
+    response.status(500).send({ message: `Something went wrong`, ok: false });
+    console.log('deleteColumn', err);
+  }
 };
 
 module.exports = { createColumn, deleteColumn };

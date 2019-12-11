@@ -9,8 +9,6 @@ const pool = db.pool;
 const secretKey = process.env.SECRET_OR_KEY;
 
 const getTeams = async (request, response) => {
-  console.log(request.headers);
-
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -90,7 +88,6 @@ const getTeamById = async (request, response) => {
 
 const createTeam = async (request, response) => {
   const { name, desc } = request.body;
-
   const { user_id, username } = helpers.checkToken(request, response);
 
   try {
@@ -123,7 +120,6 @@ const updateTeam = async (request, response) => {
 
   const { user_id, username } = helpers.checkToken(request, response);
 
-  // console.log('update team', request.body, id);
   try {
     let user = await pool.query(
       'select is_admin from team_user where user_id = $1 and team_id = $2',
@@ -148,15 +144,28 @@ const updateTeam = async (request, response) => {
   }
 };
 
-const deleteTeam = (request, response) => {
-  const id = parseInt(request.params.id);
+const deleteTeam = async (request, response) => {
+  const { id } = parseInt(request.params);
+  const { user_id, username } = helpers.checkToken(request, response);
 
-  pool.query('delete from team where id = $1', [id], (err, results) => {
-    if (err) {
-      throw err;
+  try {
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, id]
+    );
+    if (!user.rows[0].is_admin) {
+      throw 403;
     }
-    response.status(200).send({ message: `Team deleted with id: ${id}`, ok: true });
-  });
+    if (teamId) {
+      let results = await pool.query('delete from team where id = $1', [id]);
+
+      response.status(200).send({ message: `Team (id ${id}) deleted successfully`, ok: true });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+  }
 };
 
 const createTeamUser = async (request, response) => {
@@ -263,7 +272,7 @@ const deleteTeamUser = async (request, response) => {
 
 const findTeamUser = async (request, response) => {
   const { username, teamId } = request.params;
-  console.log('findUser', username);
+
   try {
     if (!username) {
       throw 400;

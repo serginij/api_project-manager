@@ -24,20 +24,23 @@ const createCard = async (request, response) => {
     }
   } catch (err) {
     response.status(500).send({ message: `Something went wrong`, ok: false });
-    console.log(err);
+    console.log('createCard', err);
   }
 };
 
 const deleteCard = (request, response) => {
   const id = parseInt(request.params.id);
-
-  pool.query('delete from card where id = $1', [id], (err, results) => {
-    if (err) {
-      response.status(500).send({ message: 'Something went wrong', ok: false });
-      throw err;
-    }
-    response.status(200).send({ message: `Card deleted with id: ${id}`, ok: true });
-  });
+  try {
+    pool.query('delete from card where id = $1', [id], (err, results) => {
+      if (err) {
+        throw err;
+      }
+      response.status(200).send({ message: `Card deleted with id: ${id}`, ok: true });
+    });
+  } catch (err) {
+    response.status(500).send({ message: 'Something went wrong', ok: false });
+    console.log('deleteCard', err);
+  }
 };
 
 const updateCard = async (request, response) => {
