@@ -83,4 +83,36 @@ const deleteColumn = (request, response) => {
   }
 };
 
-module.exports = { createColumn, deleteColumn };
+const updateColumn = async (request, response) => {
+  const id = parseInt(request.params.id);
+  const { name } = request.body;
+
+  const { user_id, username } = helpers.checkToken(request, response);
+  console.log('updateColumn', request.params, request.body);
+
+  try {
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = (select team_id from desk where id = (select desk_id from public.column where id = $2))',
+      [user_id, id]
+    );
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+
+    if (id && name) {
+      let results = await pool.query('update public.column set name = $1 where id = $2', [
+        name,
+        id
+      ]);
+
+      response.status(200).send({ message: 'Column updated successfully', ok: true });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+    console.log(err);
+  }
+};
+
+module.exports = { createColumn, deleteColumn, updateColumn };

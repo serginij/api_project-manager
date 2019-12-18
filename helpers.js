@@ -32,15 +32,34 @@ const handleErrors = (
       response.status(403).send({ message: messages[403], ok: false });
       break;
     case 500:
-      response.status(500).json({ message: messages[500], ok: false });
+      response.status(500).send({ message: messages[500], ok: false });
       break;
     case 401:
-      response.status(401).json({ message: messages[401], ok: false });
+      response.status(401).send({ message: messages[401], ok: false });
     default:
-      response.status(500).json({ message: messages[500], ok: false });
+      response.status(500).send({ message: messages[500], ok: false });
       break;
   }
   console.log(err);
 };
 
-module.exports = { checkToken, handleErrors };
+const checkAdmin = async (request, response) => {
+  const { user_id, username } = checkToken(request, response);
+  try {
+    let teamId = await pool.query('select team_id from desk where id = $1', [deskId]);
+
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
+    );
+
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+  } catch (err) {
+    handleErrors(response, err);
+    console.log(err);
+  }
+};
+
+module.exports = { checkToken, handleErrors, checkAdmin };

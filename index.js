@@ -66,6 +66,8 @@ app.post('/desks/:deskId/users', withAuth(queries.createDeskUser));
 
 app.post('/desks/columns', queries.createColumn);
 app.delete('/desks/columns/:id', queries.deleteColumn);
+app.put('/desks/columns/:id', withAuth(queries.updateColumn));
+
 app.post('/desks/cards', queries.createCard);
 app.delete('/desks/cards/:id', queries.deleteCard);
 app.put('/desks/cards/:id', queries.updateCard);
