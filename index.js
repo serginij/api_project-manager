@@ -72,6 +72,10 @@ app.post('/desks/cards', queries.createCard);
 app.delete('/desks/cards/:id', queries.deleteCard);
 app.put('/desks/cards/:id', queries.updateCard);
 
+app.post('/cards/:cardId/comments', queries.createComment);
+app.delete('/comments/:id', queries.deleteComment);
+app.put('/comments/:id', queries.updateComment);
+
 app.listen(port, () => {
   console.log(`App running on port ${port}`);
 });

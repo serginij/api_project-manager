@@ -29,17 +29,13 @@ const createCard = async (request, response) => {
   }
 };
 
-const deleteCard = (request, response) => {
+const deleteCard = async (request, response) => {
   const id = parseInt(request.params.id);
   console.log('deleteCard', request.params, request.body);
 
   try {
-    pool.query('delete from card where id = $1', [id], (err, results) => {
-      if (err) {
-        throw err;
-      }
-      response.status(200).send({ message: `Card deleted with id: ${id}`, ok: true });
-    });
+    let results = await pool.query('delete from card where id = $1', [id]);
+    response.status(200).send({ message: `Card deleted with id: ${id}`, ok: true });
   } catch (err) {
     response.status(500).send({ message: 'Something went wrong', ok: false });
     console.log('deleteCard', err);

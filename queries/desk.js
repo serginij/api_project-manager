@@ -66,10 +66,18 @@ const getDesk = async (request, response) => {
 
       colRes[column.id] = column;
       colRes[column.id].cards = [];
-      cards.rows.forEach(card => {
+      let promises = cards.rows.map(async card => {
+        // let comments = await pool.query('select * from comment where card_id=$1', [card.id]);
+        let comments = await pool.query(
+          'select comment.*, res.username from comment join (select desk_user.id, query.username from desk_user join (select public.user.id as user_id, public.user.username, team_user.id as team_user_id from public.user join team_user on team_user.user_id = public.user.id) as query on query.team_user_id = desk_user.team_user_id) as res on res.id = comment.desk_user_id where card_id =$1',
+          [card.id]
+        );
+        card.comments = comments.rows;
         cardRes[card.id] = card;
         colRes[column.id].cards.push(card.id);
       });
+      await Promise.all(promises);
+      console.log('cardRes', cardRes, cards.rows);
       return column.id;
     });
 
