@@ -12,7 +12,7 @@ const createComment = async (request, response) => {
 
   try {
     let teamId = await pool.query(
-      'select team_id, id from desk where id = (select desk_id from public.column where id=(select column_id from card_user where card_id = $1))',
+      'select team_id, id from desk where id = (select desk_id from public.column where id=(select column_id from card where card_id = $1))',
       [cardId]
     );
     // console.log('createComment teamId', teamId.rows, cardId);

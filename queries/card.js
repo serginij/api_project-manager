@@ -9,14 +9,17 @@ const createCard = async (request, response) => {
 
   try {
     if (name && columnId) {
-      const results = await pool.query('insert into card (name) values ($1) returning id', [name]);
-
-      const card_user = await pool.query(
-        'insert into card_user (card_id, column_id) values ($1, $2)',
-        [results.rows[0].id, columnId]
+      const results = await pool.query(
+        'insert into card (name, column_id) values ($1, $2) returning id',
+        [name, columnId]
       );
 
-      console.log(results, card_user);
+      // const card_user = await pool.query(
+      //   'insert into card_user (card_id, column_id) values ($1, $2)',
+      //   [results.rows[0].id, columnId]
+      // );
+
+      // console.log(results, card_user);
       response
         .status(201)
         .send({ message: `Card added successfully`, ok: true, id: results.rows[0].id });
@@ -44,17 +47,23 @@ const deleteCard = async (request, response) => {
 
 const updateCard = async (request, response) => {
   const id = parseInt(request.params.id);
-  const { name, columnId } = request.body;
+  const { name, desc } = request.body;
   console.log('updateCard', request.body, request.params);
 
   try {
-    if (id && name && columnId) {
-      const results = await pool.query('update card set name = $1 where id = $2', [name, id]);
-
-      const card_user = await pool.query('update card_user set column_id = $1 where card_id = $2', [
-        columnId,
-        id
-      ]);
+    if (id && (name || desc)) {
+      let results;
+      if (name && desc) {
+        results = await pool.query('update card set name = $1, desc = $2 where id = $3', [
+          name,
+          desc,
+          id
+        ]);
+      } else if (name) {
+        results = await pool.query('update card set name = $1 where id = $2', [name, id]);
+      } else if (desc) {
+        results = await pool.query('update card set desc = $1 where id = $2', [desc, id]);
+      }
 
       response.status(201).send({ message: `Card updated successfully`, ok: true, id: id });
     } else {
@@ -65,4 +74,91 @@ const updateCard = async (request, response) => {
   }
 };
 
-module.exports = { createCard, deleteCard, updateCard };
+const addCardUser = async (request, response) => {
+  const id = parseInt(request.params.id);
+  const { userId } = request.body;
+
+  console.log('addCardUser', request.body, request.params);
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  try {
+    let teamId = await pool.query(
+      'select team_id, id from desk where id = (select desk_id from public.column where id = (select column_id from card where id = $1))',
+      [id]
+    );
+    let user = await pool.query(
+      'select is_admin, id from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
+    );
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+
+    let cardUser = await pool.query(
+      'select id from card_user where card_id = $1 and desk_user_id = (select id from desk_user where team_user_id = $2 and desk_id = $3)',
+      [id, user.rows[0].id, teamId.rows[0].id]
+    );
+
+    if (id && userId && cardUser.rows.length == 0) {
+      let results = await pool.query(
+        'insert into card_user (card_id, desk_user_id) values ($1, (select id from desk_user where desk_id = (select desk_id from public.column where id = (select column_id from card where id = $1)) and team_user_id = (select id from team_user where team_id = $2 and user_id = $3)))',
+        [id, teamId.rows[0].team_id, userId]
+      );
+
+      let username = await pool.query('select username from public.user where id = $1', [userId]);
+
+      response.status(201).send({
+        message: `User added successfully`,
+        ok: true,
+        username: username.rows[0].username
+      });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+  }
+};
+
+const deleteCardUser = async (request, response) => {
+  const id = parseInt(request.params.id);
+  const userId = parseInt(request.params.userId);
+
+  console.log('deleteCardUser', request.body, request.params);
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  try {
+    let teamId = await pool.query(
+      'select team_id from desk where id = (select desk_id from public.column where id = (select column_id from card where id = $1))',
+      [id]
+    );
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
+    );
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+
+    if (id && user_id) {
+      let results = await pool.query(
+        'delete from card_user where card_id = $1 and desk_user_id = (select id from desk_user where team_user_id in (select id from team_user where team_id = $2 and user_id = $3))',
+        [id, teamId.rows[0].team_id, user_id]
+      );
+
+      let username = await pool.query('select username from public.user where id = $1', [user_id]);
+
+      response.status(201).send({
+        message: `User deleted successfully`,
+        ok: true,
+        username: username.rows[0].username
+      });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+  }
+};
+
+module.exports = { createCard, deleteCard, updateCard, addCardUser, deleteCardUser };

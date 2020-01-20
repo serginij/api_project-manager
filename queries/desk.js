@@ -55,14 +55,15 @@ const getDesk = async (request, response) => {
       [deskId]
     );
 
+    console.log('deskUsers');
+
     let colRes = {};
     let cardRes = {};
 
     let promises = columns.rows.map(async column => {
-      const cards = await pool.query(
-        'select * from card where id in (select card_id from card_user where column_id = $1)',
-        [column.id]
-      );
+      const cards = await pool.query('select * from card where column_id = $1', [column.id]);
+
+      console.log('cards from column in getDesk', cards.rows);
 
       colRes[column.id] = column;
       colRes[column.id].cards = [];
@@ -72,6 +73,12 @@ const getDesk = async (request, response) => {
           'select comment.*, res.username from comment join (select desk_user.id, query.username from desk_user join (select public.user.id as user_id, public.user.username, team_user.id as team_user_id from public.user join team_user on team_user.user_id = public.user.id) as query on query.team_user_id = desk_user.team_user_id) as res on res.id = comment.desk_user_id where card_id =$1',
           [card.id]
         );
+        let users = await pool.query(
+          'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where id in (select desk_user_id from card_user where card_id = $1)));',
+          [card.id]
+        );
+
+        card.users = users.rows;
         card.comments = comments.rows;
         cardRes[card.id] = card;
         colRes[column.id].cards.push(card.id);
@@ -81,7 +88,7 @@ const getDesk = async (request, response) => {
       return column.id;
     });
 
-    results.rows[0].users = users.rows[0] ? [users.rows[0]] : [];
+    results.rows[0].users = users.rows.length ? users.rows : [];
     results.rows[0].columns = await Promise.all(promises);
 
     response.status(200).send({ desk: results.rows[0], columns: colRes, cards: cardRes, ok: true });
@@ -170,13 +177,22 @@ const createDeskUser = async (request, response) => {
         teamId.rows[0].team_id
       ]);
 
-      if (user.rows.length) {
+      let deskUser = await pool.query(
+        'select id from desk_user where desk_id = $1 and team_user_id = $2',
+        [deskId, user.rows[0].id]
+      );
+
+      console.log('team_user_id', user.rows);
+      console.log('desk_user_id', deskUser.rows);
+
+      if (user.rows.length && deskUser.rows.length == 0) {
         let results = await pool.query(
-          'insert into desk_user (team_user_id, desk_id) values ((select id from team_user where team_id = $1 and user_id = $2), $3)',
-          [teamId.rows[0].team_id, userId, deskId]
+          'insert into desk_user (team_user_id, desk_id) values ($1, $2)',
+          [user.rows[0].id, deskId]
         );
 
-        Promise.all(results);
+        console.log(results);
+        // Promise.all(results);
 
         response.status(200).json({
           message: `User (${userId}) added successfully to desk ${deskId}`,
@@ -250,6 +266,48 @@ const deleteDesk = async (request, response) => {
   }
 };
 
+const findDeskUser = async (request, response) => {
+  const deskId = parseInt(request.params.deskId);
+  const usern = request.params.usern;
+
+  console.log('findDeskUser', request.params, request.body);
+  const { user_id, username } = helpers.checkToken(request, response);
+
+  try {
+    let teamId = await pool.query('select team_id, id from desk where id = $1', [deskId]);
+    let user = await pool.query(
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      [user_id, teamId.rows[0].team_id]
+    );
+    if (!user.rows[0].is_admin) {
+      throw 403;
+    }
+    if (usern) {
+      let results = await pool.query(
+        `select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = ${teamId.rows[0].id})) and username like '%${usern}%'`
+      );
+
+      console.log('findDeskUser', results);
+
+      response
+        .status(200)
+        .send({ message: `Desk deleted successfully`, ok: true, users: results.rows });
+    } else {
+      let results = await pool.query(
+        `select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = ${teamId.rows[0].id}))`
+      );
+
+      console.log('findDeskUser', results);
+
+      response
+        .status(200)
+        .send({ message: `Desk deleted successfully`, ok: true, users: results.rows });
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+  }
+};
+
 module.exports = {
   getTeamDesks,
   getDeskUsers,
@@ -258,5 +316,6 @@ module.exports = {
   deleteDeskUser,
   getDesk,
   updateDesk,
-  deleteDesk
+  deleteDesk,
+  findDeskUser
 };
