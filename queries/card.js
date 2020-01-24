@@ -87,7 +87,7 @@ const addCardUser = async (request, response) => {
       [id]
     );
     let user = await pool.query(
-      'select is_admin, id from team_user where user_id = $1 and team_id = $2',
+      'select is_admin from team_user where user_id = $1 and team_id = $2',
       [user_id, teamId.rows[0].team_id]
     );
     if (!user.rows[0].is_admin) {
@@ -95,8 +95,8 @@ const addCardUser = async (request, response) => {
     }
 
     let cardUser = await pool.query(
-      'select id from card_user where card_id = $1 and desk_user_id = (select id from desk_user where team_user_id = $2 and desk_id = $3)',
-      [id, user.rows[0].id, teamId.rows[0].id]
+      'select id from card_user where card_id = $1 and desk_user_id = (select id from desk_user where team_user_id = (select id from team_user where team_id = $2 and user_id = $3) and desk_id = $4)',
+      [id, teamId.rows[0].team_id, userId, teamId.rows[0].id]
     );
 
     if (id && userId && cardUser.rows.length == 0) {
@@ -136,15 +136,18 @@ const deleteCardUser = async (request, response) => {
       'select is_admin from team_user where user_id = $1 and team_id = $2',
       [user_id, teamId.rows[0].team_id]
     );
+    console.log('teamId', teamId.rows);
+    console.log('user', user.rows);
     if (!user.rows[0].is_admin) {
       throw 403;
     }
 
-    if (id && user_id) {
+    if (id && userId) {
       let results = await pool.query(
-        'delete from card_user where card_id = $1 and desk_user_id = (select id from desk_user where team_user_id in (select id from team_user where team_id = $2 and user_id = $3))',
-        [id, teamId.rows[0].team_id, user_id]
+        'delete from card_user where card_id = $1 and desk_user_id = (select id from desk_user where team_user_id = (select id from team_user where team_id = $2 and user_id = $3) and desk_id = (select desk_id from public.column where id = (select column_id from card where id = $1)))',
+        [id, teamId.rows[0].team_id, userId]
       );
+      console.log('results', results);
 
       let username = await pool.query('select username from public.user where id = $1', [user_id]);
 
