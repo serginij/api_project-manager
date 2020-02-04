@@ -93,17 +93,17 @@ ALTER SEQUENCE public.card_user_id_seq OWNED BY public.card_user.id;
 
 
 --
--- Name: checkbox; Type: TABLE; Schema: public; Owner: pm
+-- Name: checklist; Type: TABLE; Schema: public; Owner: pm
 --
 
-CREATE TABLE public.checkbox (
+CREATE TABLE public.checklist (
     id integer NOT NULL,
     card_id integer NOT NULL,
-    body text NOT NULL
+    name text NOT NULL
 );
 
 
-ALTER TABLE public.checkbox OWNER TO pm;
+ALTER TABLE public.checklist OWNER TO pm;
 
 --
 -- Name: checkbox_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
@@ -124,7 +124,43 @@ ALTER TABLE public.checkbox_id_seq OWNER TO pm;
 -- Name: checkbox_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
-ALTER SEQUENCE public.checkbox_id_seq OWNED BY public.checkbox.id;
+ALTER SEQUENCE public.checkbox_id_seq OWNED BY public.checklist.id;
+
+
+--
+-- Name: checkitem; Type: TABLE; Schema: public; Owner: pm
+--
+
+CREATE TABLE public.checkitem (
+    id integer NOT NULL,
+    checklist_id integer NOT NULL,
+    text text NOT NULL,
+    checked boolean NOT NULL
+);
+
+
+ALTER TABLE public.checkitem OWNER TO pm;
+
+--
+-- Name: checkitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
+--
+
+CREATE SEQUENCE public.checkitem_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.checkitem_id_seq OWNER TO pm;
+
+--
+-- Name: checkitem_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
+--
+
+ALTER SEQUENCE public.checkitem_id_seq OWNED BY public.checkitem.id;
 
 
 --
@@ -392,10 +428,17 @@ ALTER TABLE ONLY public.card_user ALTER COLUMN id SET DEFAULT nextval('public.ca
 
 
 --
--- Name: checkbox id; Type: DEFAULT; Schema: public; Owner: pm
+-- Name: checkitem id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
-ALTER TABLE ONLY public.checkbox ALTER COLUMN id SET DEFAULT nextval('public.checkbox_id_seq'::regclass);
+ALTER TABLE ONLY public.checkitem ALTER COLUMN id SET DEFAULT nextval('public.checkitem_id_seq'::regclass);
+
+
+--
+-- Name: checklist id; Type: DEFAULT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.checklist ALTER COLUMN id SET DEFAULT nextval('public.checkbox_id_seq'::regclass);
 
 
 --
@@ -461,15 +504,30 @@ COPY public.card (id, "desc", date_start, date_end, tags, name, column_id) FROM 
 --
 
 COPY public.card_user (id, desk_user_id, card_id) FROM stdin;
-67	1	60
+82	25	60
 \.
 
 
 --
--- Data for Name: checkbox; Type: TABLE DATA; Schema: public; Owner: pm
+-- Data for Name: checkitem; Type: TABLE DATA; Schema: public; Owner: pm
 --
 
-COPY public.checkbox (id, card_id, body) FROM stdin;
+COPY public.checkitem (id, checklist_id, text, checked) FROM stdin;
+10	2	Hey	t
+17	12	444	f
+15	11	123	t
+9	2	One	f
+\.
+
+
+--
+-- Data for Name: checklist; Type: TABLE DATA; Schema: public; Owner: pm
+--
+
+COPY public.checklist (id, card_id, name) FROM stdin;
+11	60	One more
+12	60	3
+2	60	Test checklist
 \.
 
 
@@ -498,6 +556,8 @@ COPY public."column" (id, name, desk_id) FROM stdin;
 --
 
 COPY public.comment (id, card_id, desk_user_id, text, date) FROM stdin;
+24	60	25	Test comment...	2020-02-04 21:39:29.261+03
+25	60	25	hello world	2020-02-04 23:15:08.922+03
 \.
 
 
@@ -524,10 +584,9 @@ COPY public.desk (id, name, mind_map, team_id) FROM stdin;
 --
 
 COPY public.desk_user (id, team_user_id, desk_id) FROM stdin;
-1	1	2
 7	19	6
-15	1	17
 19	7	2
+25	1	2
 \.
 
 
@@ -595,14 +654,21 @@ SELECT pg_catalog.setval('public.card_id_seq', 61, true);
 -- Name: card_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
 --
 
-SELECT pg_catalog.setval('public.card_user_id_seq', 67, true);
+SELECT pg_catalog.setval('public.card_user_id_seq', 82, true);
 
 
 --
 -- Name: checkbox_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
 --
 
-SELECT pg_catalog.setval('public.checkbox_id_seq', 1, false);
+SELECT pg_catalog.setval('public.checkbox_id_seq', 12, true);
+
+
+--
+-- Name: checkitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
+--
+
+SELECT pg_catalog.setval('public.checkitem_id_seq', 17, true);
 
 
 --
@@ -616,7 +682,7 @@ SELECT pg_catalog.setval('public.column_id_seq', 14, true);
 -- Name: comment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
 --
 
-SELECT pg_catalog.setval('public.comment_id_seq', 19, true);
+SELECT pg_catalog.setval('public.comment_id_seq', 25, true);
 
 
 --
@@ -630,7 +696,7 @@ SELECT pg_catalog.setval('public.desk_id_seq', 19, true);
 -- Name: desk_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
 --
 
-SELECT pg_catalog.setval('public.desk_user_id_seq', 19, true);
+SELECT pg_catalog.setval('public.desk_user_id_seq', 25, true);
 
 
 --
@@ -671,11 +737,19 @@ ALTER TABLE ONLY public.card_user
 
 
 --
--- Name: checkbox checkbox_pk; Type: CONSTRAINT; Schema: public; Owner: pm
+-- Name: checklist checkbox_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
-ALTER TABLE ONLY public.checkbox
+ALTER TABLE ONLY public.checklist
     ADD CONSTRAINT checkbox_pk PRIMARY KEY (id);
+
+
+--
+-- Name: checkitem checkitem_pk; Type: CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.checkitem
+    ADD CONSTRAINT checkitem_pk PRIMARY KEY (id);
 
 
 --
@@ -767,11 +841,19 @@ ALTER TABLE ONLY public.card_user
 
 
 --
--- Name: checkbox checkbox_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
+-- Name: checklist checkbox_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
-ALTER TABLE ONLY public.checkbox
+ALTER TABLE ONLY public.checklist
     ADD CONSTRAINT checkbox_fk0 FOREIGN KEY (card_id) REFERENCES public.card(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: checkitem checkitem_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.checkitem
+    ADD CONSTRAINT checkitem_fk0 FOREIGN KEY (checklist_id) REFERENCES public.checklist(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

@@ -81,6 +81,14 @@ app.post('/cards/:cardId/comments', queries.createComment);
 app.delete('/comments/:id', queries.deleteComment);
 app.put('/comments/:id', queries.updateComment);
 
+app.post('/cards/:cardId/checklists', queries.createList);
+app.put('/checklist/:id', queries.updateList);
+app.delete('/checklist/:id', queries.deleteList);
+
+app.post('/checklist/:listId/items', queries.createItem);
+app.put('/checkitem/:itemId', queries.updateItem);
+app.delete('/checkitem/:id', queries.deleteItem);
+
 app.listen(port, () => {
   console.log(`App running on port ${port}`);
 });

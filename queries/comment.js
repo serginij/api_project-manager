@@ -12,18 +12,21 @@ const createComment = async (request, response) => {
 
   try {
     let teamId = await pool.query(
-      'select team_id, id from desk where id = (select desk_id from public.column where id=(select column_id from card where card_id = $1))',
+      'select team_id, id from desk where id = (select desk_id from public.column where id=(select column_id from card where id = $1))',
       [cardId]
     );
     // console.log('createComment teamId', teamId.rows, cardId);
     let user = await pool.query(
-      'select is_admin from team_user where user_id = $1 and team_id = $2',
+      'select is_admin, id from team_user where user_id = $1 and team_id = $2',
       [user_id, teamId.rows[0].team_id]
     );
-    let deskUser;
+    let deskUser = await pool.query(
+      'select id from desk_user where team_user_id = $1 and desk_id = $2',
+      [user.rows[0].id, teamId.rows[0].id]
+    );
 
     if (text && cardId) {
-      if (user.rows[0].is_admin) {
+      if (user.rows[0].is_admin && deskUser.rows.length == 0) {
         deskUser = await pool.query(
           'insert into desk_user (desk_id, team_user_id) values($1, (select id from team_user where team_id=$2 and user_id=$3)) returning id',
           [teamId.rows[0].id, teamId.rows[0].team_id, user_id]
@@ -90,7 +93,7 @@ const deleteComment = async (request, response) => {
 const updateComment = async (request, response) => {
   const id = parseInt(request.params.id);
   const { text } = request.body;
-  console.log('updateCard', request.body, request.params);
+  console.log('updateComment', request.body, request.params);
 
   const { user_id, username } = helpers.checkToken(request, response);
 
@@ -104,14 +107,13 @@ const updateComment = async (request, response) => {
     }
     if (id && text) {
       const results = await pool.query('update comment set text = $1 where id = $2', [text, id]);
-
       response.status(201).send({ message: `Comment updated successfully`, ok: true });
     } else {
       throw 400;
     }
   } catch (err) {
     helpers.handleErrors(response, err);
-    console.log('deleteComment', err);
+    console.log('updateComment', err);
   }
 };
 

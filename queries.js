@@ -4,6 +4,7 @@ const deskQueries = require('./queries/desk');
 const columnQueries = require('./queries/column');
 const cardQueries = require('./queries/card');
 const commentQueries = require('./queries/comment');
+const checklistQueries = require('./queries/checklist');
 
 module.exports = {
   ...userQueries,
@@ -11,5 +12,6 @@ module.exports = {
   ...deskQueries,
   ...columnQueries,
   ...cardQueries,
-  ...commentQueries
+  ...commentQueries,
+  ...checklistQueries
 };

@@ -73,11 +73,21 @@ const getDesk = async (request, response) => {
           'select comment.*, res.username from comment join (select desk_user.id, query.username from desk_user join (select public.user.id as user_id, public.user.username, team_user.id as team_user_id from public.user join team_user on team_user.user_id = public.user.id) as query on query.team_user_id = desk_user.team_user_id) as res on res.id = comment.desk_user_id where card_id =$1',
           [card.id]
         );
+        let checkLists = await pool.query('select * from checklist where card_id = $1', [card.id]);
+
+        checkLists.rows.map(async list => {
+          let items = await pool.query(
+            'select id, text, checked from checkitem where checklist_id = $1',
+            [list.id]
+          );
+          list.items = items.rows;
+        });
         let users = await pool.query(
           'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where id in (select desk_user_id from card_user where card_id = $1)));',
           [card.id]
         );
 
+        card.checklists = checkLists.rows;
         card.users = users.rows;
         card.comments = comments.rows;
         cardRes[card.id] = card;
@@ -289,9 +299,7 @@ const findDeskUser = async (request, response) => {
 
       console.log('findDeskUser', results);
 
-      response
-        .status(200)
-        .send({ message: `Desk deleted successfully`, ok: true, users: results.rows });
+      response.status(200).send({ ok: true, users: results.rows });
     } else {
       let results = await pool.query(
         `select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = ${teamId.rows[0].id}))`
@@ -299,9 +307,7 @@ const findDeskUser = async (request, response) => {
 
       console.log('findDeskUser', results);
 
-      response
-        .status(200)
-        .send({ message: `Desk deleted successfully`, ok: true, users: results.rows });
+      response.status(200).send({ ok: true, users: results.rows });
     }
   } catch (err) {
     helpers.handleErrors(response, err);
