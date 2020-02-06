@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.5
+-- Dumped from database version 12.1
 -- Dumped by pg_dump version 12.1
 
 SET statement_timeout = 0;
@@ -18,6 +18,8 @@ SET row_security = off;
 
 SET default_tablespace = '';
 
+SET default_table_access_method = heap;
+
 --
 -- Name: card; Type: TABLE; Schema: public; Owner: pm
 --
@@ -25,11 +27,11 @@ SET default_tablespace = '';
 CREATE TABLE public.card (
     id integer NOT NULL,
     "desc" text,
-    date_start date,
-    date_end date,
     tags text,
     name text NOT NULL,
-    column_id integer
+    column_id integer,
+    checked boolean DEFAULT false NOT NULL,
+    deadline timestamp with time zone
 );
 
 
@@ -494,8 +496,8 @@ ALTER TABLE ONLY public."user" ALTER COLUMN id SET DEFAULT nextval('public.user_
 -- Data for Name: card; Type: TABLE DATA; Schema: public; Owner: pm
 --
 
-COPY public.card (id, "desc", date_start, date_end, tags, name, column_id) FROM stdin;
-60	\N	\N	\N	\N	test card	6
+COPY public.card (id, "desc", tags, name, column_id, checked, deadline) FROM stdin;
+60	\N	\N	test card	6	f	\N
 \.
 
 

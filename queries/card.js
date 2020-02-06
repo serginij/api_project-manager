@@ -47,23 +47,16 @@ const deleteCard = async (request, response) => {
 
 const updateCard = async (request, response) => {
   const id = parseInt(request.params.id);
-  const { name, desc } = request.body;
+  const { card } = request.body;
   console.log('updateCard', request.body, request.params);
 
   try {
-    if (id && (name || desc)) {
-      let results;
-      if (name && desc) {
-        results = await pool.query('update card set name = $1, desc = $2 where id = $3', [
-          name,
-          desc,
-          id
-        ]);
-      } else if (name) {
-        results = await pool.query('update card set name = $1 where id = $2', [name, id]);
-      } else if (desc) {
-        results = await pool.query('update card set desc = $1 where id = $2', [desc, id]);
-      }
+    let { name, desc, deadline, checked } = card;
+    if (id && name && desc !== undefined && deadline !== undefined && checked !== undefined) {
+      let results = await pool.query(
+        'update card set name = $1, "desc" = $2, deadline = $3, checked = $4 where id = $5',
+        [name, desc, deadline, checked, id]
+      );
 
       response.status(201).send({ message: `Card updated successfully`, ok: true, id: id });
     } else {
