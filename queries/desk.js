@@ -80,7 +80,7 @@ const getDesk = async (request, response) => {
             'select id, text, checked from checkitem where checklist_id = $1',
             [list.id]
           );
-          list.items = items.rows;
+          list.items = items.rows.length ? items.rows : [];
         });
         let users = await pool.query(
           'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where id in (select desk_user_id from card_user where card_id = $1)));',
