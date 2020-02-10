@@ -75,11 +75,14 @@ const getDesk = async (request, response) => {
         );
         let checkLists = await pool.query('select * from checklist where card_id = $1', [card.id]);
 
+        Promise.all(checkLists);
         checkLists.rows.map(async list => {
           let items = await pool.query(
             'select id, text, checked from checkitem where checklist_id = $1',
             [list.id]
           );
+          Promise.all(items);
+
           list.items = items.rows.length ? items.rows : [];
         });
         let users = await pool.query(
