@@ -55,35 +55,30 @@ const getDesk = async (request, response) => {
       [deskId]
     );
 
-    console.log('deskUsers');
-
     let colRes = {};
     let cardRes = {};
 
     let promises = columns.rows.map(async column => {
       const cards = await pool.query('select * from card where column_id = $1', [column.id]);
 
-      console.log('cards from column in getDesk', cards.rows);
-
       colRes[column.id] = column;
       colRes[column.id].cards = [];
       let promises = cards.rows.map(async card => {
-        // let comments = await pool.query('select * from comment where card_id=$1', [card.id]);
         let comments = await pool.query(
           'select comment.*, res.username from comment join (select desk_user.id, query.username from desk_user join (select public.user.id as user_id, public.user.username, team_user.id as team_user_id from public.user join team_user on team_user.user_id = public.user.id) as query on query.team_user_id = desk_user.team_user_id) as res on res.id = comment.desk_user_id where card_id =$1',
           [card.id]
         );
         let checkLists = await pool.query('select * from checklist where card_id = $1', [card.id]);
 
-        Promise.all(checkLists);
         checkLists.rows.map(async list => {
           let items = await pool.query(
             'select id, text, checked from checkitem where checklist_id = $1',
             [list.id]
           );
-          Promise.all(items);
-
-          list.items = items.rows.length ? items.rows : [];
+          list.items = [];
+          if (items.rows.length) {
+            list.items = items.rows;
+          }
         });
         let users = await pool.query(
           'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where id in (select desk_user_id from card_user where card_id = $1)));',
@@ -97,7 +92,6 @@ const getDesk = async (request, response) => {
         colRes[column.id].cards.push(card.id);
       });
       await Promise.all(promises);
-      console.log('cardRes', cardRes, cards.rows);
       return column.id;
     });
 
