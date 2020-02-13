@@ -5,6 +5,7 @@ const columnQueries = require('./queries/column');
 const cardQueries = require('./queries/card');
 const commentQueries = require('./queries/comment');
 const checklistQueries = require('./queries/checklist');
+const labelQueries = require('./queries/label');
 
 module.exports = {
   ...userQueries,
@@ -13,5 +14,6 @@ module.exports = {
   ...columnQueries,
   ...cardQueries,
   ...commentQueries,
-  ...checklistQueries
+  ...checklistQueries,
+  ...labelQueries
 };

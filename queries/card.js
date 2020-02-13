@@ -58,7 +58,7 @@ const updateCard = async (request, response) => {
         [name, desc, deadline, checked, id]
       );
 
-      response.status(201).send({ message: `Card updated successfully`, ok: true, id: id });
+      response.status(200).send({ message: `Card updated successfully`, ok: true, id: id });
     } else {
       throw 400;
     }
