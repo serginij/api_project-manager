@@ -55,8 +55,11 @@ const getDesk = async (request, response) => {
       [deskId]
     );
 
+    const labels = await pool.query('select * from label where desk_id = $1', [deskId]);
+
     let colRes = {};
     let cardRes = {};
+    let labelRes = {};
 
     let promises = columns.rows.map(async column => {
       const cards = await pool.query('select * from card where column_id = $1', [column.id]);
@@ -69,6 +72,10 @@ const getDesk = async (request, response) => {
           [card.id]
         );
         let checkLists = await pool.query('select * from checklist where card_id = $1', [card.id]);
+
+        let labels = await pool.query('select label_id from card_label where card_id = $1', [
+          card.id
+        ]);
 
         checkLists.rows.map(async list => {
           let items = await pool.query(
@@ -85,6 +92,8 @@ const getDesk = async (request, response) => {
           [card.id]
         );
 
+        card.labels = labels.rows.map(label => label.label_id);
+        console.log(card.labels);
         card.checklists = checkLists.rows;
         card.users = users.rows;
         card.comments = comments.rows;
@@ -95,6 +104,11 @@ const getDesk = async (request, response) => {
       return column.id;
     });
 
+    labels.rows.forEach(label => {
+      labelRes[label.id] = { ...label };
+    });
+
+    results.rows[0].labels = labelRes;
     results.rows[0].users = users.rows.length ? users.rows : [];
     results.rows[0].columns = await Promise.all(promises);
 

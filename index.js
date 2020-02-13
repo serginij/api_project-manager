@@ -73,9 +73,16 @@ app.delete('/desks/cards/:id', queries.deleteCard);
 app.put('/desks/cards/:id', queries.updateCard);
 
 app.get('/desks/:deskId/user/find/:usern', queries.findDeskUser);
+app.post('/desks/:deskId/labels', queries.createLabel);
+
+app.put('/labels/:id', queries.updateLabel);
+app.delete('/labels/:id', queries.deleteLabel);
 
 app.post('/cards/:id/users', queries.addCardUser);
 app.delete('/cards/:id/users/:userId', queries.deleteCardUser);
+
+app.post('/cards/:cardId/labels', queries.addCardLabel);
+app.delete('/cards/:cardId/labels/:labelId', queries.deleteCardLabel);
 
 app.post('/cards/:cardId/comments', queries.createComment);
 app.delete('/comments/:id', queries.deleteComment);
