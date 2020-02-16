@@ -150,20 +150,23 @@ const updateTeam = async (request, response) => {
 };
 
 const deleteTeam = async (request, response) => {
-  const { id } = parseInt(request.params);
+  const id = parseInt(request.params.id);
 
   console.log('deleteTeam', request.params, request.body);
   const { user_id, username } = helpers.checkToken(request, response);
+  console.log('userId', user_id, id);
 
   try {
     let user = await pool.query(
       'select is_admin from team_user where user_id = $1 and team_id = $2',
       [user_id, id]
     );
+
     if (!user.rows[0].is_admin) {
       throw 403;
     }
-    if (teamId) {
+
+    if (id) {
       let results = await pool.query('delete from team where id = $1', [id]);
 
       response.status(200).send({ message: `Team (id ${id}) deleted successfully`, ok: true });
