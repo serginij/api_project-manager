@@ -5,6 +5,8 @@ const passport = require('passport');
 const passportJWT = require('passport-jwt');
 const bcrypt = require('bcrypt');
 
+const helpers = require('./helpers');
+
 const pool = db.pool;
 const saltRounds = 10;
 const tokenLifeTime = 60 * 60;
@@ -63,21 +65,46 @@ const login = async (req, res) => {
 };
 
 const signup = async (req, res) => {
-  const { username, password } = req.body;
-  let hash = bcrypt.hashSync(password, saltRounds);
-  try {
-    let result = await pool.query(
-      'insert into public.user (username, password) values ($1, $2) returning id, username',
-      [username, hash]
-    );
-    let user = { ...result.rows[0] };
-    console.log('user', user);
+  const { data } = req.body;
 
-    let payload = { id: user.id, username: user.username };
-    let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: tokenLifeTime });
-    res.json({ message: 'ok', token: token });
+  console.log('signup', req.params, req.body);
+
+  try {
+    const { name, surname, username, password, email } = data;
+
+    if (name && surname && username && password && email) {
+      let hash = bcrypt.hashSync(password, saltRounds);
+      let user = await pool.query(
+        'select username, email from public.user where email = $2 or username = $1',
+        [username, email]
+      );
+
+      user.rows.forEach(user => {
+        if (user.username === username) {
+          res.status(400).send({
+            message: 'user with that username already exists',
+            ok: false,
+            reason: 'username'
+          });
+        }
+        if (user.email === email) {
+          res
+            .status(400)
+            .send({ message: 'user with that email already exists', ok: false, reason: 'email' });
+        }
+      });
+
+      let result = await pool.query(
+        'insert into public.user (username, password, name, surname, email) values ($1, $2, $3, $4, $5)',
+        [username, hash, name, surname, email]
+      );
+
+      res.status(201).send({ message: 'User signed up successfully', ok: true });
+    } else {
+      throw 400;
+    }
   } catch (err) {
-    res.status(500).json({ message: 'something went wrong', ok: false });
+    helpers.handleErrors(res, err);
     console.log('SIGNUP ERR', err);
   }
 };
