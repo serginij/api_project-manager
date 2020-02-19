@@ -51,7 +51,13 @@ const login = async (req, res) => {
     console.log('comparing', bcrypt.compareSync(password, user.password));
 
     if (bcrypt.compareSync(password, user.password)) {
-      let payload = { id: user.id, username: user.username };
+      let payload = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        surname: user.surname,
+        email: user.email
+      };
       let token = jwt.sign(payload, jwtOptions.secretOrKey, { expiresIn: tokenLifeTime });
 
       res.status(200).json({ ok: true, token: token });

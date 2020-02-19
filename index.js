@@ -37,7 +37,7 @@ app.put('/password', withAuth(queries.updatePassword));
 
 app.get('/users', queries.getUsers);
 app.get('/users/:id', queries.getUserById);
-app.put('/users/:id', queries.updateUser);
+app.put('/users/update', queries.updateUser);
 app.delete('/users/:id', queries.deleteUser);
 app.get('/user/find/:username', queries.findUser);
 

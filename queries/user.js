@@ -31,34 +31,61 @@ const getUserById = (request, response) => {
   });
 };
 
-const updateUser = (request, response) => {
-  const id = parseInt(request.params.id);
-  const { username, email } = request.body;
+const updateUser = async (request, response) => {
+  const { username: uname, name, surname } = request.body;
   console.log('updateUser', request.params, request.body);
 
-  if (username && id) {
-    pool.query(
-      'update public.user set username = $1, email = $2 where id = $3',
-      [username, email, id],
-      (err, results) => {
-        if (err) {
-          throw err;
-        }
-        response.status(200).send({ message: `User modified with id: ${id}`, ok: true });
+  const { user_id, username, email } = helpers.checkToken(request, response);
+
+  try {
+    if (uname && name && surname) {
+      let user = await pool.query('select from public.user where username = $1 and id != $2', [
+        uname,
+        user_id
+      ]);
+      // console.log(user.rows);
+      if (user.rows.length) {
+        response.status(400).send({
+          message: 'user with that username already exists',
+          ok: false,
+          reason: 'username'
+        });
       }
-    );
-  } else {
-    response.status(400).send({ message: 'Incorrect data', ok: false });
+
+      let results = await pool.query(
+        'update public.user set username = $1, name = $2, surname = $3 where id = $4',
+        [uname, name, surname, user_id]
+      );
+
+      let payload = {
+        id: user_id,
+        username: uname,
+        name: name,
+        surname: surname,
+        email: email
+      };
+      let token = jwt.sign(payload, secretKey, { expiresIn: 60 * 30 });
+
+      response
+        .status(200)
+        .send({ message: `User updated with id: ${user_id}`, ok: true, token: token });
+    } else {
+      throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+    console.log('update user err', err);
   }
 };
 
 const updatePassword = async (request, response) => {
   const { password, newPassword } = request.body;
   console.log('updatePassword', request.params, request.body);
-  const { id, username } = jwt.verify(request.headers.authorization.split(' ')[1], secretKey);
+
+  const { user_id, username, email, name, surname } = helpers.checkToken(request, response);
 
   try {
-    let result = await pool.query('select * from public.user where id = $1', [id]);
+    let result = await pool.query('select * from public.user where id = $1', [user_id]);
 
     let user = { ...result.rows[0] };
 
@@ -67,23 +94,31 @@ const updatePassword = async (request, response) => {
     }
 
     if (bcrypt.compareSync(password, user.password)) {
-      let payload = { id: user.id, username: user.username };
+      let payload = {
+        id: user_id,
+        username: username,
+        name: name,
+        surname: surname,
+        email: email
+      };
       let token = jwt.sign(payload, secretKey, { expiresIn: 60 * 30 });
       let hash = bcrypt.hashSync(password, saltRounds);
 
       let passwordRes = await pool.query('update public.user set password = $1 where id = $2', [
         hash,
-        id
+        user_id
       ]);
 
       response
         .status(200)
         .send({ message: 'Password was successfully updated', token: token, ok: true });
     } else {
-      response.status(401).send({ message: 'passwords did not match', ok: false });
+      response.status(400).send({ message: 'Incorrect password', ok: false, reason: 'password' });
+      console.log('updatePassword incorrect password');
     }
   } catch (err) {
     helpers.handleErrors(response, err);
+    console.log('updatePassword err', err);
   }
 };
 
