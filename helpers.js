@@ -10,7 +10,13 @@ const checkToken = (request, response) =>
     } else {
       console.log('success');
 
-      return { user_id: decoded.id, username: decoded.username };
+      return {
+        user_id: decoded.id,
+        username: decoded.username,
+        email: decoded.email,
+        name: decoded.name,
+        surname: decoded.surname
+      };
     }
   });
 
