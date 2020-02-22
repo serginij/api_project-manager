@@ -6,6 +6,7 @@ const cardQueries = require('./queries/card');
 const commentQueries = require('./queries/comment');
 const checklistQueries = require('./queries/checklist');
 const labelQueries = require('./queries/label');
+const mindmapQueries = require('./queries/mindmap');
 
 module.exports = {
   ...userQueries,
@@ -15,5 +16,6 @@ module.exports = {
   ...cardQueries,
   ...commentQueries,
   ...checklistQueries,
-  ...labelQueries
+  ...labelQueries,
+  ...mindmapQueries
 };
