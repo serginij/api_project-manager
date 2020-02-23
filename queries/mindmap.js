@@ -71,16 +71,20 @@ const parseMindmap = async (request, response) => {
 
       updateNode(mindmap);
 
-      let colRes = await pool.query(
-        `insert into public.column (name, desk_id) values ${colRows.join(',')} returning id`
-      );
+      let colRes =
+        colRows.length &&
+        (await pool.query(
+          `insert into public.column (name, desk_id) values ${colRows.join(',')} returning id`
+        ));
 
       let finalColumns = {};
       let finalCards = {};
 
-      let newColumns = colRes.rows.map(col => {
-        return col.id;
-      });
+      let newColumns =
+        colRes &&
+        colRes.rows.map(col => {
+          return col.id;
+        });
 
       desk.columns = desk.columns.map((colId, index) => {
         let id = colRes.rows[index].id;
@@ -96,9 +100,11 @@ const parseMindmap = async (request, response) => {
         return id;
       });
 
-      let cardRes = await pool.query(
-        `insert into card (name, column_id) values ${cardRows.join(',')} returning id, column_id`
-      );
+      let cardRes =
+        cardRows.length &&
+        (await pool.query(
+          `insert into card (name, column_id) values ${cardRows.join(',')} returning id, column_id`
+        ));
 
       desk.columns.forEach((colId, index) => {
         columnId = colRes.rows[index].id;
@@ -129,16 +135,19 @@ const parseMindmap = async (request, response) => {
         });
       });
 
-      let checkRes = await pool.query(
-        `insert into checklist (card_id, name) values (${Object.keys(finalCards).join(
-          ", ''), ("
-        )}, '') returning id, card_id`
-      );
+      let checkRes =
+        Object.keys(finalCards).length &&
+        (await pool.query(
+          `insert into checklist (card_id, name) values (${Object.keys(finalCards).join(
+            ", ''), ("
+          )}, '') returning id, card_id`
+        ));
 
       checklists = {};
-      checkRes.rows.forEach(check => {
-        checklists[check.card_id] = check.id;
-      });
+      checkRes &&
+        checkRes.rows.forEach(check => {
+          checklists[check.card_id] = check.id;
+        });
 
       Object.values(finalCards).forEach(card => {
         finalCards[card.id].checklists = card.checklists.map(check => {
@@ -153,16 +162,19 @@ const parseMindmap = async (request, response) => {
         });
       });
 
-      let itemRes = await pool.query(
-        `insert into checkitem (checklist_id, text, checked) values ${itemRows.join(
-          ','
-        )} returning id, checklist_id`
-      );
+      let itemRes =
+        itemRows.length &&
+        (await pool.query(
+          `insert into checkitem (checklist_id, text, checked) values ${itemRows.join(
+            ','
+          )} returning id, checklist_id`
+        ));
 
       checkitems = {};
-      itemRes.rows.forEach(item => {
-        checkitems[item.checklist_id] = item.id;
-      });
+      itemRes &&
+        itemRes.rows.forEach(item => {
+          checkitems[item.checklist_id] = item.id;
+        });
 
       Object.values(finalCards).forEach(card => {
         let checkId = finalCards[card.id].checklists[0].id;
@@ -188,4 +200,59 @@ const parseMindmap = async (request, response) => {
   }
 };
 
-module.exports = { parseMindmap };
+const parseDesk = async (request, response) => {
+  const { desk, columns, cards } = request.body;
+  console.log('parseDesk', request.params, request.body);
+  try {
+    if (desk.id) {
+      let mindmap = {
+        data: { name: desk.name, id: desk.id },
+        level: 1,
+        children: []
+      };
+      desk.columns.forEach((id, colIndex) => {
+        mindmap.children.push({
+          data: { id: +(desk.id + '' + id), name: columns[id].name },
+          level: 2,
+          children: []
+        });
+        columns[id].cards.forEach((cardId, cardIndex) => {
+          mindmap.children[colIndex].children.push({
+            data: { id: +(desk.id + '' + id + cardId), name: cards[cardId].name },
+            level: 3,
+            children: []
+          });
+          cards[cardId].checklists.forEach((checkId, checkIndex) => {
+            cards[cardId].checklists[checkIndex].items.forEach(item => {
+              mindmap.children[colIndex].children[cardIndex].children.push({
+                data: { id: +(desk.id + '' + id + cardId + item.id), name: item.text },
+                level: 4,
+                children: []
+              });
+            });
+          });
+        });
+      });
+
+      console.log(mindmap);
+      console.log(JSON.stringify(mindmap));
+
+      let result = await pool.query(
+        `update desk set mind_map = '${JSON.stringify(mindmap)}' where id = ${desk.id} `
+      );
+
+      response.status(201).send({
+        message: `Mindmap added successfully`,
+        ok: true,
+        mindmap: mindmap
+      });
+    } else {
+      response.status(400).send({ message: 'Incorrect data', ok: false });
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+    console.log('parseDesk err', err);
+  }
+};
+
+module.exports = { parseMindmap, parseDesk };
