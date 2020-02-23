@@ -97,6 +97,7 @@ app.put('/checkitem/:itemId', queries.updateItem);
 app.delete('/checkitem/:id', queries.deleteItem);
 
 app.post('/mindmap/parse', queries.parseMindmap);
+app.post('/mindmap/parseDesk', queries.parseDesk);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}`);
