@@ -7,6 +7,7 @@ require('dotenv').config();
 const pool = db.pool;
 const secretKey = process.env.SECRET_OR_KEY;
 const saltRounds = 10;
+const tokenLifeTime = 60 * 60 * 12;
 
 const getUsers = (request, response) => {
   console.log('getUsers', request.params, request.body);
@@ -64,7 +65,7 @@ const updateUser = async (request, response) => {
         surname: surname,
         email: email
       };
-      let token = jwt.sign(payload, secretKey, { expiresIn: 60 * 30 });
+      let token = jwt.sign(payload, secretKey, { expiresIn: tokenLifeTime });
 
       response
         .status(200)
@@ -101,7 +102,7 @@ const updatePassword = async (request, response) => {
         surname: surname,
         email: email
       };
-      let token = jwt.sign(payload, secretKey, { expiresIn: 60 * 30 });
+      let token = jwt.sign(payload, secretKey, { expiresIn: tokenLifeTime });
       let hash = bcrypt.hashSync(password, saltRounds);
 
       let passwordRes = await pool.query('update public.user set password = $1 where id = $2', [

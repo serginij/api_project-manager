@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const secretKey = process.env.SECRET_OR_KEY;
+const passportConf = require('./passport');
 
 const checkToken = (request, response) =>
   jwt.verify(request.headers.authorization.split(' ')[1], secretKey, (err, decoded) => {
@@ -68,4 +69,6 @@ const checkAdmin = async (request, response) => {
   }
 };
 
-module.exports = { checkToken, handleErrors, checkAdmin };
+const withAuth = func => (passportConf.passport.authenticate('jwt', { session: false }), func);
+
+module.exports = { checkToken, handleErrors, checkAdmin, withAuth };
