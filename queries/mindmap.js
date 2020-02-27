@@ -264,6 +264,20 @@ const parseMindmap = async (request, response) => {
 const parseDesk = async (request, response) => {
   const { desk, columns, cards } = request.body;
   console.log('parseDesk', request.params, request.body);
+
+  const colors = [
+    'f44336',
+    'ff9800',
+    'fdd835',
+    '4caf50',
+    '00bcd4',
+    '2196f3',
+    'ab47bc',
+    '8bc34a',
+    '3f51b5',
+    'e91e63'
+  ];
+
   try {
     if (desk.id) {
       let mindmap = {
@@ -279,7 +293,7 @@ const parseDesk = async (request, response) => {
         });
         columns[id].cards.forEach((cardId, cardIndex) => {
           let card = cards[cardId];
-          // console.log(card.labels[0], desk.labels[card.labels[0]]);
+
           let color = card.labels[0] ? desk.labels[card.labels[0]].color : '000000';
           mindmap.children[colIndex].children.push({
             data: {
@@ -290,14 +304,20 @@ const parseDesk = async (request, response) => {
             level: 3,
             children: []
           });
-          cards[cardId].checklists.forEach((checkId, checkIndex) => {
-            cards[cardId].checklists[checkIndex] &&
-              cards[cardId].checklists[checkIndex].items.forEach(item => {
+          let cardColors = colors.filter(c => c !== color);
+          cards[cardId].checklists.forEach((check, checkIndex) => {
+            let idx = Math.floor(Math.random() * cardColors.length);
+
+            console.log('check', check);
+            checkColor = cardColors[idx] ? cardColors[idx] : '000000';
+            cardColors.filter(c => c !== checkColor);
+            check.items &&
+              check.items.forEach(item => {
                 mindmap.children[colIndex].children[cardIndex].children.push({
                   data: {
                     id: +(desk.id + '' + id + cardId + item.id),
                     name: item.text,
-                    color: color
+                    color: checkColor
                   },
                   level: 4,
                   children: []
