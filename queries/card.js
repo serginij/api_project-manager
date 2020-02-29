@@ -51,11 +51,18 @@ const updateCard = async (request, response) => {
   console.log('updateCard', request.body, request.params);
 
   try {
-    let { name, desc, deadline, checked } = card;
-    if (id && name && desc !== undefined && deadline !== undefined && checked !== undefined) {
+    let { name, desc, deadline, checked, stage } = card;
+    if (
+      id &&
+      name &&
+      desc !== undefined &&
+      deadline !== undefined &&
+      checked !== undefined &&
+      stage !== undefined
+    ) {
       let results = await pool.query(
-        'update card set name = $1, "desc" = $2, deadline = $3, checked = $4 where id = $5',
-        [name, desc, deadline, checked, id]
+        'update card set name = $1, "desc" = $2, deadline = $3, checked = $4, stage = $5 where id = $6',
+        [name, desc, deadline, checked, stage, id]
       );
 
       response.status(200).send({ message: `Card updated successfully`, ok: true, id: id });
