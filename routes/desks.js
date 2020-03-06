@@ -18,6 +18,7 @@ router.post('/:deskId/users', withAuth(queries.createDeskUser));
 router.post('/columns', queries.createColumn);
 router.delete('/columns/:id', queries.deleteColumn);
 router.put('/columns/:id', withAuth(queries.updateColumn));
+router.post('/:deskId/moveColumn', queries.moveColumn);
 
 router.post('/cards', queries.createCard);
 router.delete('/cards/:id', queries.deleteCard);

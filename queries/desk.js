@@ -47,9 +47,10 @@ const getDesk = async (request, response) => {
   try {
     const results = await pool.query('select * from desk where id = $1', [deskId]);
 
-    const columns = await pool.query('select id, name from public.column where desk_id = $1', [
-      deskId
-    ]);
+    const columns = await pool.query(
+      'select id, name, cards from public.column where desk_id = $1',
+      [deskId]
+    );
     const users = await pool.query(
       'select id, username from public.user where id in (select user_id from team_user where id in (select team_user_id from desk_user where desk_id = $1))',
       [deskId]
@@ -65,7 +66,7 @@ const getDesk = async (request, response) => {
       const cards = await pool.query('select * from card where column_id = $1', [column.id]);
 
       colRes[column.id] = column;
-      colRes[column.id].cards = [];
+
       let promises = cards.rows.map(async card => {
         let comments = await pool.query(
           'select comment.*, res.username from comment join (select desk_user.id, query.username from desk_user join (select public.user.id as user_id, public.user.username, team_user.id as team_user_id from public.user join team_user on team_user.user_id = public.user.id) as query on query.team_user_id = desk_user.team_user_id) as res on res.id = comment.desk_user_id where card_id =$1',
@@ -98,7 +99,6 @@ const getDesk = async (request, response) => {
         card.users = users.rows;
         card.comments = comments.rows;
         cardRes[card.id] = card;
-        colRes[column.id].cards.push(card.id);
       });
       await Promise.all(promises);
       return column.id;
@@ -107,10 +107,11 @@ const getDesk = async (request, response) => {
     labels.rows.forEach(label => {
       labelRes[label.id] = { ...label };
     });
+    await Promise.all(promises);
 
     results.rows[0].labels = labelRes;
     results.rows[0].users = users.rows.length ? users.rows : [];
-    results.rows[0].columns = await Promise.all(promises);
+    console.log(results.rows[0]);
 
     response.status(200).send({ desk: results.rows[0], columns: colRes, cards: cardRes, ok: true });
   } catch (err) {
