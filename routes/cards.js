@@ -11,5 +11,6 @@ router.post('/:cardId/labels', queries.addCardLabel);
 router.delete('/:cardId/labels/:labelId', queries.deleteCardLabel);
 router.post('/:cardId/comments', queries.createComment);
 router.post('/:cardId/checklists', queries.createList);
+router.post('/:id/moveCard', queries.moveCard);
 
 module.exports = router;
