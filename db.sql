@@ -3,7 +3,9 @@
 --
 
 -- Dumped from database version 12.1
--- Dumped by pg_dump version 12.1
+-- Dumped by pg_dump version 12.2
+
+-- Started on 2020-03-11 16:28:28 MSK
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -16,11 +18,28 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- TOC entry 705 (class 1247 OID 16825)
+-- Name: stage; Type: TYPE; Schema: public; Owner: pm
+--
+
+CREATE TYPE public.stage AS ENUM (
+    'init',
+    'plan',
+    'impl',
+    'test',
+    'end'
+);
+
+
+ALTER TYPE public.stage OWNER TO pm;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
+-- TOC entry 217 (class 1259 OID 16635)
 -- Name: card; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -29,15 +48,17 @@ CREATE TABLE public.card (
     "desc" text,
     tags text,
     name text NOT NULL,
-    column_id integer,
+    column_id integer NOT NULL,
     checked boolean DEFAULT false NOT NULL,
-    deadline timestamp with time zone
+    deadline timestamp with time zone,
+    stage public.stage
 );
 
 
 ALTER TABLE public.card OWNER TO pm;
 
 --
+-- TOC entry 216 (class 1259 OID 16633)
 -- Name: card_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -53,6 +74,8 @@ CREATE SEQUENCE public.card_id_seq
 ALTER TABLE public.card_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3331 (class 0 OID 0)
+-- Dependencies: 216
 -- Name: card_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -60,6 +83,20 @@ ALTER SEQUENCE public.card_id_seq OWNED BY public.card.id;
 
 
 --
+-- TOC entry 226 (class 1259 OID 16788)
+-- Name: card_label; Type: TABLE; Schema: public; Owner: pm
+--
+
+CREATE TABLE public.card_label (
+    label_id integer NOT NULL,
+    card_id integer NOT NULL
+);
+
+
+ALTER TABLE public.card_label OWNER TO pm;
+
+--
+-- TOC entry 215 (class 1259 OID 16627)
 -- Name: card_user; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -73,6 +110,7 @@ CREATE TABLE public.card_user (
 ALTER TABLE public.card_user OWNER TO pm;
 
 --
+-- TOC entry 214 (class 1259 OID 16625)
 -- Name: card_user_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -88,6 +126,8 @@ CREATE SEQUENCE public.card_user_id_seq
 ALTER TABLE public.card_user_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3332 (class 0 OID 0)
+-- Dependencies: 214
 -- Name: card_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -95,6 +135,7 @@ ALTER SEQUENCE public.card_user_id_seq OWNED BY public.card_user.id;
 
 
 --
+-- TOC entry 221 (class 1259 OID 16654)
 -- Name: checklist; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -108,6 +149,7 @@ CREATE TABLE public.checklist (
 ALTER TABLE public.checklist OWNER TO pm;
 
 --
+-- TOC entry 220 (class 1259 OID 16652)
 -- Name: checkbox_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -123,6 +165,8 @@ CREATE SEQUENCE public.checkbox_id_seq
 ALTER TABLE public.checkbox_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3333 (class 0 OID 0)
+-- Dependencies: 220
 -- Name: checkbox_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -130,6 +174,7 @@ ALTER SEQUENCE public.checkbox_id_seq OWNED BY public.checklist.id;
 
 
 --
+-- TOC entry 223 (class 1259 OID 16749)
 -- Name: checkitem; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -144,6 +189,7 @@ CREATE TABLE public.checkitem (
 ALTER TABLE public.checkitem OWNER TO pm;
 
 --
+-- TOC entry 222 (class 1259 OID 16747)
 -- Name: checkitem_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -159,6 +205,8 @@ CREATE SEQUENCE public.checkitem_id_seq
 ALTER TABLE public.checkitem_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3334 (class 0 OID 0)
+-- Dependencies: 222
 -- Name: checkitem_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -166,19 +214,22 @@ ALTER SEQUENCE public.checkitem_id_seq OWNED BY public.checkitem.id;
 
 
 --
+-- TOC entry 213 (class 1259 OID 16616)
 -- Name: column; Type: TABLE; Schema: public; Owner: pm
 --
 
 CREATE TABLE public."column" (
     id integer NOT NULL,
     name text NOT NULL,
-    desk_id integer NOT NULL
+    desk_id integer NOT NULL,
+    cards integer[] DEFAULT ARRAY[]::integer[]
 );
 
 
 ALTER TABLE public."column" OWNER TO pm;
 
 --
+-- TOC entry 212 (class 1259 OID 16614)
 -- Name: column_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -194,6 +245,8 @@ CREATE SEQUENCE public.column_id_seq
 ALTER TABLE public.column_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3335 (class 0 OID 0)
+-- Dependencies: 212
 -- Name: column_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -201,6 +254,7 @@ ALTER SEQUENCE public.column_id_seq OWNED BY public."column".id;
 
 
 --
+-- TOC entry 219 (class 1259 OID 16646)
 -- Name: comment; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -216,6 +270,7 @@ CREATE TABLE public.comment (
 ALTER TABLE public.comment OWNER TO pm;
 
 --
+-- TOC entry 218 (class 1259 OID 16644)
 -- Name: comment_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -231,6 +286,8 @@ CREATE SEQUENCE public.comment_id_seq
 ALTER TABLE public.comment_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3336 (class 0 OID 0)
+-- Dependencies: 218
 -- Name: comment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -238,6 +295,7 @@ ALTER SEQUENCE public.comment_id_seq OWNED BY public.comment.id;
 
 
 --
+-- TOC entry 209 (class 1259 OID 16597)
 -- Name: desk; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -245,13 +303,15 @@ CREATE TABLE public.desk (
     id integer NOT NULL,
     name text NOT NULL,
     mind_map json,
-    team_id integer NOT NULL
+    team_id integer NOT NULL,
+    columns integer[] DEFAULT ARRAY[]::integer[]
 );
 
 
 ALTER TABLE public.desk OWNER TO pm;
 
 --
+-- TOC entry 208 (class 1259 OID 16595)
 -- Name: desk_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -267,6 +327,8 @@ CREATE SEQUENCE public.desk_id_seq
 ALTER TABLE public.desk_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3337 (class 0 OID 0)
+-- Dependencies: 208
 -- Name: desk_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -274,6 +336,7 @@ ALTER SEQUENCE public.desk_id_seq OWNED BY public.desk.id;
 
 
 --
+-- TOC entry 211 (class 1259 OID 16608)
 -- Name: desk_user; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -287,6 +350,7 @@ CREATE TABLE public.desk_user (
 ALTER TABLE public.desk_user OWNER TO pm;
 
 --
+-- TOC entry 210 (class 1259 OID 16606)
 -- Name: desk_user_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -302,6 +366,8 @@ CREATE SEQUENCE public.desk_user_id_seq
 ALTER TABLE public.desk_user_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3338 (class 0 OID 0)
+-- Dependencies: 210
 -- Name: desk_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -309,6 +375,47 @@ ALTER SEQUENCE public.desk_user_id_seq OWNED BY public.desk_user.id;
 
 
 --
+-- TOC entry 225 (class 1259 OID 16771)
+-- Name: label; Type: TABLE; Schema: public; Owner: pm
+--
+
+CREATE TABLE public.label (
+    id integer NOT NULL,
+    name text NOT NULL,
+    color text NOT NULL,
+    desk_id integer NOT NULL
+);
+
+
+ALTER TABLE public.label OWNER TO pm;
+
+--
+-- TOC entry 224 (class 1259 OID 16769)
+-- Name: label_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
+--
+
+CREATE SEQUENCE public.label_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.label_id_seq OWNER TO pm;
+
+--
+-- TOC entry 3339 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: label_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
+--
+
+ALTER SEQUENCE public.label_id_seq OWNED BY public.label.id;
+
+
+--
+-- TOC entry 205 (class 1259 OID 16578)
 -- Name: team; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -322,6 +429,7 @@ CREATE TABLE public.team (
 ALTER TABLE public.team OWNER TO pm;
 
 --
+-- TOC entry 204 (class 1259 OID 16576)
 -- Name: team_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -337,6 +445,8 @@ CREATE SEQUENCE public.team_id_seq
 ALTER TABLE public.team_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3340 (class 0 OID 0)
+-- Dependencies: 204
 -- Name: team_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -344,6 +454,7 @@ ALTER SEQUENCE public.team_id_seq OWNED BY public.team.id;
 
 
 --
+-- TOC entry 207 (class 1259 OID 16589)
 -- Name: team_user; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -358,6 +469,7 @@ CREATE TABLE public.team_user (
 ALTER TABLE public.team_user OWNER TO pm;
 
 --
+-- TOC entry 206 (class 1259 OID 16587)
 -- Name: team_user_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -373,6 +485,8 @@ CREATE SEQUENCE public.team_user_id_seq
 ALTER TABLE public.team_user_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3341 (class 0 OID 0)
+-- Dependencies: 206
 -- Name: team_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -380,6 +494,7 @@ ALTER SEQUENCE public.team_user_id_seq OWNED BY public.team_user.id;
 
 
 --
+-- TOC entry 203 (class 1259 OID 16565)
 -- Name: user; Type: TABLE; Schema: public; Owner: pm
 --
 
@@ -387,13 +502,16 @@ CREATE TABLE public."user" (
     id integer NOT NULL,
     username text NOT NULL,
     password text NOT NULL,
-    email text
+    email text NOT NULL,
+    name text DEFAULT ''::text NOT NULL,
+    surname text DEFAULT ''::text NOT NULL
 );
 
 
 ALTER TABLE public."user" OWNER TO pm;
 
 --
+-- TOC entry 202 (class 1259 OID 16563)
 -- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: pm
 --
 
@@ -409,6 +527,8 @@ CREATE SEQUENCE public.user_id_seq
 ALTER TABLE public.user_id_seq OWNER TO pm;
 
 --
+-- TOC entry 3342 (class 0 OID 0)
+-- Dependencies: 202
 -- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pm
 --
 
@@ -416,6 +536,7 @@ ALTER SEQUENCE public.user_id_seq OWNED BY public."user".id;
 
 
 --
+-- TOC entry 3150 (class 2604 OID 16404)
 -- Name: card id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -423,6 +544,7 @@ ALTER TABLE ONLY public.card ALTER COLUMN id SET DEFAULT nextval('public.card_id
 
 
 --
+-- TOC entry 3149 (class 2604 OID 16405)
 -- Name: card_user id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -430,6 +552,7 @@ ALTER TABLE ONLY public.card_user ALTER COLUMN id SET DEFAULT nextval('public.ca
 
 
 --
+-- TOC entry 3154 (class 2604 OID 16406)
 -- Name: checkitem id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -437,6 +560,7 @@ ALTER TABLE ONLY public.checkitem ALTER COLUMN id SET DEFAULT nextval('public.ch
 
 
 --
+-- TOC entry 3153 (class 2604 OID 16407)
 -- Name: checklist id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -444,6 +568,7 @@ ALTER TABLE ONLY public.checklist ALTER COLUMN id SET DEFAULT nextval('public.ch
 
 
 --
+-- TOC entry 3147 (class 2604 OID 16408)
 -- Name: column id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -451,6 +576,7 @@ ALTER TABLE ONLY public."column" ALTER COLUMN id SET DEFAULT nextval('public.col
 
 
 --
+-- TOC entry 3152 (class 2604 OID 16409)
 -- Name: comment id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -458,6 +584,7 @@ ALTER TABLE ONLY public.comment ALTER COLUMN id SET DEFAULT nextval('public.comm
 
 
 --
+-- TOC entry 3144 (class 2604 OID 16410)
 -- Name: desk id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -465,6 +592,7 @@ ALTER TABLE ONLY public.desk ALTER COLUMN id SET DEFAULT nextval('public.desk_id
 
 
 --
+-- TOC entry 3146 (class 2604 OID 16411)
 -- Name: desk_user id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -472,6 +600,15 @@ ALTER TABLE ONLY public.desk_user ALTER COLUMN id SET DEFAULT nextval('public.de
 
 
 --
+-- TOC entry 3155 (class 2604 OID 16774)
+-- Name: label id; Type: DEFAULT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.label ALTER COLUMN id SET DEFAULT nextval('public.label_id_seq'::regclass);
+
+
+--
+-- TOC entry 3142 (class 2604 OID 16412)
 -- Name: team id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -479,6 +616,7 @@ ALTER TABLE ONLY public.team ALTER COLUMN id SET DEFAULT nextval('public.team_id
 
 
 --
+-- TOC entry 3143 (class 2604 OID 16413)
 -- Name: team_user id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -486,6 +624,7 @@ ALTER TABLE ONLY public.team_user ALTER COLUMN id SET DEFAULT nextval('public.te
 
 
 --
+-- TOC entry 3139 (class 2604 OID 16414)
 -- Name: user id; Type: DEFAULT; Schema: public; Owner: pm
 --
 
@@ -493,236 +632,7 @@ ALTER TABLE ONLY public."user" ALTER COLUMN id SET DEFAULT nextval('public.user_
 
 
 --
--- Data for Name: card; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.card (id, "desc", tags, name, column_id, checked, deadline) FROM stdin;
-60	\N	\N	test card	6	f	\N
-\.
-
-
---
--- Data for Name: card_user; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.card_user (id, desk_user_id, card_id) FROM stdin;
-82	25	60
-\.
-
-
---
--- Data for Name: checkitem; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.checkitem (id, checklist_id, text, checked) FROM stdin;
-10	2	Hey	t
-17	12	444	f
-15	11	123	t
-9	2	One	f
-\.
-
-
---
--- Data for Name: checklist; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.checklist (id, card_id, name) FROM stdin;
-11	60	One more
-12	60	3
-2	60	Test checklist
-\.
-
-
---
--- Data for Name: column; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public."column" (id, name, desk_id) FROM stdin;
-3	123	5
-5	12	2
-8	Собрать вещи	7
-9	Задачи	18
-11	На проверке	18
-13	one	17
-10	В процессе выполнения!	18
-4	aaaa	6
-7	jhk	6
-6	234	2
-2	utuy	2
-14	test	17
-\.
-
-
---
--- Data for Name: comment; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.comment (id, card_id, desk_user_id, text, date) FROM stdin;
-24	60	25	Test comment...	2020-02-04 21:39:29.261+03
-25	60	25	hello world	2020-02-04 23:15:08.922+03
-\.
-
-
---
--- Data for Name: desk; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.desk (id, name, mind_map, team_id) FROM stdin;
-3	123	\N	2
-5	Доска 1	\N	3
-7	My desk	\N	8
-8	My desk	\N	8
-10	Desk	\N	10
-9	Desk	\N	10
-18	Известия.ИТ	\N	11
-6	Доска 1	\N	4
-17	abc	\N	1
-2	Infochemistry	\N	1
-\.
-
-
---
--- Data for Name: desk_user; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.desk_user (id, team_user_id, desk_id) FROM stdin;
-7	19	6
-19	7	2
-25	1	2
-\.
-
-
---
--- Data for Name: team; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.team (id, name, "desc") FROM stdin;
-2	Second	4
-3	Пример	
-5	Team 2	
-6	Team 3	
-7	Team 4	
-10	team	
-1	Team 1	
-11	Известия.ИТ	Интернет портал газеты "Известия"
-4	Code team	Команда для работы над проектом "The Code"
-8	Polina's Team	Happiness
-\.
-
-
---
--- Data for Name: team_user; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public.team_user (id, user_id, team_id, is_admin) FROM stdin;
-1	1	1	t
-19	3	4	t
-7	3	1	f
-22	1	5	t
-23	1	6	t
-24	1	7	t
-25	1	8	t
-30	7	10	t
-31	3	10	f
-33	4	1	f
-34	3	11	t
-35	4	4	f
-37	7	8	f
-\.
-
-
---
--- Data for Name: user; Type: TABLE DATA; Schema: public; Owner: pm
---
-
-COPY public."user" (id, username, password, email) FROM stdin;
-1	test	$2b$10$cwoeNw8S/a/Fg1oV7ZBJ.Os5bJplW0/XjvlCA.5DaLqgO4rHkJsfK	\N
-3	qwerty	$2b$10$bPegdb9.NQOMxKLOeL9vl.Q9tss0XdvJzoc6qw1ggGLHleXXhNOoa	\N
-4	alaet	$2b$10$PhD/q3yI9NXi2zBsmbww1eX9SXjG.1ztO9v8CalJLxvDxUQJt/lwK	\N
-5	ton	$2b$10$ALMyhR1JKHKX6zvhc3oFauLiLY.fOibhisipL84gxN0Dvujnibt7C	\N
-6	teer	$2b$10$.xoCYfn3QQFXSg0ntWU8T.pUxek5bTIKWxxE1ymrpgyuE5RNJeo5y	\N
-7	polina	$2b$10$KRxeEiSFdpjX0uT0yinJleSCRD7FjrLQ3TXpz4IqkpKv/xtZbg8Qe	\N
-\.
-
-
---
--- Name: card_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.card_id_seq', 61, true);
-
-
---
--- Name: card_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.card_user_id_seq', 82, true);
-
-
---
--- Name: checkbox_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.checkbox_id_seq', 12, true);
-
-
---
--- Name: checkitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.checkitem_id_seq', 17, true);
-
-
---
--- Name: column_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.column_id_seq', 14, true);
-
-
---
--- Name: comment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.comment_id_seq', 25, true);
-
-
---
--- Name: desk_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.desk_id_seq', 19, true);
-
-
---
--- Name: desk_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.desk_user_id_seq', 25, true);
-
-
---
--- Name: team_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.team_id_seq', 11, true);
-
-
---
--- Name: team_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.team_user_id_seq', 37, true);
-
-
---
--- Name: user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pm
---
-
-SELECT pg_catalog.setval('public.user_id_seq', 7, true);
-
-
---
+-- TOC entry 3175 (class 2606 OID 16415)
 -- Name: card card_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -731,6 +641,7 @@ ALTER TABLE ONLY public.card
 
 
 --
+-- TOC entry 3173 (class 2606 OID 16416)
 -- Name: card_user card_user_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -739,6 +650,7 @@ ALTER TABLE ONLY public.card_user
 
 
 --
+-- TOC entry 3179 (class 2606 OID 16417)
 -- Name: checklist checkbox_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -747,6 +659,7 @@ ALTER TABLE ONLY public.checklist
 
 
 --
+-- TOC entry 3181 (class 2606 OID 16418)
 -- Name: checkitem checkitem_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -755,6 +668,7 @@ ALTER TABLE ONLY public.checkitem
 
 
 --
+-- TOC entry 3171 (class 2606 OID 16419)
 -- Name: column column_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -763,6 +677,7 @@ ALTER TABLE ONLY public."column"
 
 
 --
+-- TOC entry 3177 (class 2606 OID 16420)
 -- Name: comment comment_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -771,6 +686,7 @@ ALTER TABLE ONLY public.comment
 
 
 --
+-- TOC entry 3167 (class 2606 OID 16421)
 -- Name: desk desk_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -779,6 +695,7 @@ ALTER TABLE ONLY public.desk
 
 
 --
+-- TOC entry 3169 (class 2606 OID 16422)
 -- Name: desk_user desk_user_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -787,6 +704,16 @@ ALTER TABLE ONLY public.desk_user
 
 
 --
+-- TOC entry 3183 (class 2606 OID 16779)
+-- Name: label label_pk; Type: CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.label
+    ADD CONSTRAINT label_pk PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3163 (class 2606 OID 16423)
 -- Name: team team_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -795,6 +722,7 @@ ALTER TABLE ONLY public.team
 
 
 --
+-- TOC entry 3165 (class 2606 OID 16424)
 -- Name: team_user team_user_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -803,6 +731,16 @@ ALTER TABLE ONLY public.team_user
 
 
 --
+-- TOC entry 3157 (class 2606 OID 16823)
+-- Name: user unique_email; Type: CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public."user"
+    ADD CONSTRAINT unique_email UNIQUE (email);
+
+
+--
+-- TOC entry 3159 (class 2606 OID 16425)
 -- Name: user user_pk; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -811,6 +749,7 @@ ALTER TABLE ONLY public."user"
 
 
 --
+-- TOC entry 3161 (class 2606 OID 16426)
 -- Name: user user_username_key; Type: CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -819,6 +758,25 @@ ALTER TABLE ONLY public."user"
 
 
 --
+-- TOC entry 3199 (class 2606 OID 16809)
+-- Name: card_label card_label_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.card_label
+    ADD CONSTRAINT card_label_fk0 FOREIGN KEY (label_id) REFERENCES public.label(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3198 (class 2606 OID 16804)
+-- Name: card_label card_label_fk1; Type: FK CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.card_label
+    ADD CONSTRAINT card_label_fk1 FOREIGN KEY (card_id) REFERENCES public.card(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3190 (class 2606 OID 16427)
 -- Name: card_user card_user_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -827,6 +785,7 @@ ALTER TABLE ONLY public.card_user
 
 
 --
+-- TOC entry 3192 (class 2606 OID 16432)
 -- Name: card card_user_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -835,6 +794,7 @@ ALTER TABLE ONLY public.card
 
 
 --
+-- TOC entry 3191 (class 2606 OID 16437)
 -- Name: card_user card_user_fk2; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -843,6 +803,7 @@ ALTER TABLE ONLY public.card_user
 
 
 --
+-- TOC entry 3195 (class 2606 OID 16442)
 -- Name: checklist checkbox_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -851,6 +812,7 @@ ALTER TABLE ONLY public.checklist
 
 
 --
+-- TOC entry 3196 (class 2606 OID 16447)
 -- Name: checkitem checkitem_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -859,6 +821,7 @@ ALTER TABLE ONLY public.checkitem
 
 
 --
+-- TOC entry 3189 (class 2606 OID 16452)
 -- Name: column column_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -867,6 +830,7 @@ ALTER TABLE ONLY public."column"
 
 
 --
+-- TOC entry 3193 (class 2606 OID 16457)
 -- Name: comment comment_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -875,6 +839,7 @@ ALTER TABLE ONLY public.comment
 
 
 --
+-- TOC entry 3194 (class 2606 OID 16462)
 -- Name: comment comment_fk1; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -883,6 +848,7 @@ ALTER TABLE ONLY public.comment
 
 
 --
+-- TOC entry 3186 (class 2606 OID 16467)
 -- Name: desk desk_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -891,6 +857,7 @@ ALTER TABLE ONLY public.desk
 
 
 --
+-- TOC entry 3187 (class 2606 OID 16472)
 -- Name: desk_user desk_user_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -899,6 +866,7 @@ ALTER TABLE ONLY public.desk_user
 
 
 --
+-- TOC entry 3188 (class 2606 OID 16477)
 -- Name: desk_user desk_user_fk1; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -907,6 +875,16 @@ ALTER TABLE ONLY public.desk_user
 
 
 --
+-- TOC entry 3197 (class 2606 OID 16814)
+-- Name: label label_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
+--
+
+ALTER TABLE ONLY public.label
+    ADD CONSTRAINT label_fk0 FOREIGN KEY (desk_id) REFERENCES public.desk(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3184 (class 2606 OID 16482)
 -- Name: team_user team_user_fk0; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
@@ -915,12 +893,15 @@ ALTER TABLE ONLY public.team_user
 
 
 --
+-- TOC entry 3185 (class 2606 OID 16487)
 -- Name: team_user team_user_fk1; Type: FK CONSTRAINT; Schema: public; Owner: pm
 --
 
 ALTER TABLE ONLY public.team_user
     ADD CONSTRAINT team_user_fk1 FOREIGN KEY (team_id) REFERENCES public.team(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
+
+-- Completed on 2020-03-11 16:28:29 MSK
 
 --
 -- PostgreSQL database dump complete

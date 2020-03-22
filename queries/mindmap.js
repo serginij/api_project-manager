@@ -21,8 +21,6 @@ const parseMindmap = async (request, response) => {
     // let deskUser;
 
     if (mindmap) {
-      // console.log(mindmap);
-
       let deskId = await pool.query(
         'insert into desk (team_id, name) values ($1, $2) returning id',
         [teamId, mindmap.data.name]
@@ -105,11 +103,15 @@ const parseMindmap = async (request, response) => {
           `insert into label (desk_id, color, name) values ${labelRows.join(',')} returning id`
         ));
 
-      let newLabels = labelRes && labelRes.rows.map(label => label.id);
-
-      newLabels.forEach((id, index) => {
+      let newLabels = labelRes.rows.map((label, index) => {
         let labelId = Object.keys(labels)[index];
-        desk.labels[id] = { color: labels[labelId], id: id, desk_id: desk.id, name: '' };
+        desk.labels[label.id] = {
+          color: labels[labelId],
+          id: label.id,
+          desk_id: desk.id,
+          name: ''
+        };
+        return label.id;
       });
 
       let colRes =
@@ -147,6 +149,7 @@ const parseMindmap = async (request, response) => {
           `insert into card (name, column_id) values ${cardRows.join(',')} returning id, column_id`
         ));
 
+      // newLabels &&
       desk.columns.forEach((colId, index) => {
         columnId = colRes.rows[index].id;
         let newCards = cardRes.rows.map(card => card.id);
@@ -208,7 +211,6 @@ const parseMindmap = async (request, response) => {
           return {
             id: checklists[card.id][index],
             items: check.items.map(item => {
-              console.log('196', check);
               itemRows.push(`(${checklists[card.id][index]}, '${items[item]}', false)`);
               return { text: items[item], id: item, checked: false };
             })
@@ -244,6 +246,17 @@ const parseMindmap = async (request, response) => {
           };
         });
       });
+
+      let Desk = await pool.query(
+        `update desk set columns = '{${desk.columns}}' where id = ${desk.id}`
+      );
+
+      const promises = Object.values(finalColumns).map(async col => {
+        const Column = await pool.query(
+          `update public.column set cards = '{${col.cards}}' where id = ${col.id}`
+        );
+      });
+      const promisesRes = await Promise.all(promises);
 
       response.status(201).send({
         message: `Desk added successfully`,
