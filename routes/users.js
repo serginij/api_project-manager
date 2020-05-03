@@ -8,6 +8,7 @@ router.use((req, res, next) => next());
 router.get('/', queries.getUsers);
 router.get('/:id', queries.getUserById);
 router.put('/update', queries.updateUser);
+router.put('/update/email', queries.updateEmail);
 router.delete('/:id', queries.deleteUser);
 router.get('/find/:username', queries.findUser);
 
