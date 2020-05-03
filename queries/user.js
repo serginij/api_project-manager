@@ -42,14 +42,14 @@ const updateUser = async (request, response) => {
     if (uname && name && surname) {
       let user = await pool.query('select from public.user where username = $1 and id != $2', [
         uname,
-        user_id
+        user_id,
       ]);
       // console.log(user.rows);
       if (user.rows.length) {
         response.status(400).send({
           message: 'user with that username already exists',
           ok: false,
-          reason: 'username'
+          reason: 'username',
         });
       }
 
@@ -63,7 +63,7 @@ const updateUser = async (request, response) => {
         username: uname,
         name: name,
         surname: surname,
-        email: email
+        email: email,
       };
       let token = jwt.sign(payload, secretKey, { expiresIn: tokenLifeTime });
 
@@ -72,6 +72,57 @@ const updateUser = async (request, response) => {
         .send({ message: `User updated with id: ${user_id}`, ok: true, token: token });
     } else {
       throw 400;
+    }
+  } catch (err) {
+    helpers.handleErrors(response, err);
+    console.log('update user err', err);
+  }
+};
+
+const updateEmail = async (request, response) => {
+  const { email } = request.body;
+  console.log('updateEmail', request.params, request.body);
+
+  const { user_id, username, name, surname } = helpers.checkToken(request, response);
+
+  try {
+    if (username && name && surname) {
+      // console.log(user.rows);
+      // if (user.rows.length) {
+
+      // }
+
+      if (!email) {
+        response.status(400).send({
+          message: 'incorrect data',
+          ok: false,
+          reason: 'email',
+        });
+      }
+
+      let results = await pool.query('update public.user set email = $1 where id = $2', [
+        email,
+        user_id,
+      ]);
+
+      let payload = {
+        id: user_id,
+        username: username,
+        name: name,
+        surname: surname,
+        email: email,
+      };
+      let token = jwt.sign(payload, secretKey, { expiresIn: tokenLifeTime });
+
+      response
+        .status(200)
+        .send({ message: `Email updated with user_id: ${user_id}`, ok: true, token: token });
+    } else {
+      response.status(400).send({
+        message: 'unkown error',
+        ok: false,
+        reason: 'email',
+      });
     }
   } catch (err) {
     helpers.handleErrors(response, err);
@@ -100,14 +151,14 @@ const updatePassword = async (request, response) => {
         username: username,
         name: name,
         surname: surname,
-        email: email
+        email: email,
       };
       let token = jwt.sign(payload, secretKey, { expiresIn: tokenLifeTime });
-      let hash = bcrypt.hashSync(password, saltRounds);
+      let hash = bcrypt.hashSync(newPassword, saltRounds);
 
       let passwordRes = await pool.query('update public.user set password = $1 where id = $2', [
         hash,
-        user_id
+        user_id,
       ]);
 
       response
@@ -161,5 +212,6 @@ module.exports = {
   updateUser,
   deleteUser,
   updatePassword,
-  findUser
+  findUser,
+  updateEmail,
 };
