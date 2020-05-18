@@ -32,7 +32,7 @@ const parseMindmap = async (request, response) => {
         columns: [],
         team_id: teamId,
         users: [],
-        labels: {}
+        labels: {},
       };
       let columns = {};
       let cards = {};
@@ -71,9 +71,9 @@ const parseMindmap = async (request, response) => {
             columns[parent.data.id].cards = [...columns[parent.data.id].cards, id];
             break;
           case 4:
-            let check = cards[parent.data.id].checklists.filter(check => check.color === color);
+            let check = cards[parent.data.id].checklists.filter((check) => check.color === color);
             if (check.length) {
-              cards[parent.data.id].checklists = cards[parent.data.id].checklists.map(el => {
+              cards[parent.data.id].checklists = cards[parent.data.id].checklists.map((el) => {
                 if (el.id === check[0].id) {
                   return { ...el, items: [...el.items, id] };
                 }
@@ -82,7 +82,12 @@ const parseMindmap = async (request, response) => {
             } else {
               cards[parent.data.id].checklists = [
                 ...cards[parent.data.id].checklists,
-                { id: cards[parent.data.id].checklists.length, name: '', color: color, items: [id] }
+                {
+                  id: cards[parent.data.id].checklists.length,
+                  name: '',
+                  color: color,
+                  items: [id],
+                },
               ];
               checks[cards[parent.data.id].checklists.length] = { name: '', items: [id] };
             }
@@ -91,7 +96,7 @@ const parseMindmap = async (request, response) => {
             break;
         }
         if (tree.children.length) {
-          tree.children.forEach(child => updateNode(child, tree));
+          tree.children.forEach((child) => updateNode(child, tree));
         }
       };
 
@@ -103,16 +108,18 @@ const parseMindmap = async (request, response) => {
           `insert into label (desk_id, color, name) values ${labelRows.join(',')} returning id`
         ));
 
-      let newLabels = labelRes.rows.map((label, index) => {
-        let labelId = Object.keys(labels)[index];
-        desk.labels[label.id] = {
-          color: labels[labelId],
-          id: label.id,
-          desk_id: desk.id,
-          name: ''
-        };
-        return label.id;
-      });
+      let newLabels =
+        labelRes.length &&
+        labelRes.rows.map((label, index) => {
+          let labelId = Object.keys(labels)[index];
+          desk.labels[label.id] = {
+            color: labels[labelId],
+            id: label.id,
+            desk_id: desk.id,
+            name: '',
+          };
+          return label.id;
+        });
 
       let colRes =
         colRows.length &&
@@ -125,7 +132,7 @@ const parseMindmap = async (request, response) => {
 
       let newColumns =
         colRes &&
-        colRes.rows.map(col => {
+        colRes.rows.map((col) => {
           return col.id;
         });
 
@@ -136,7 +143,7 @@ const parseMindmap = async (request, response) => {
 
         finalColumns[newColumns[colIndex]] = { ...oldColumns[colIndex], id: newColumns[colIndex] };
 
-        finalColumns[newColumns[colIndex]].cards.forEach(cardId => {
+        finalColumns[newColumns[colIndex]].cards.forEach((cardId) => {
           cardRows.push(`('${cards[cardId].name}',${newColumns[colIndex]})`);
         });
 
@@ -152,9 +159,9 @@ const parseMindmap = async (request, response) => {
       // newLabels &&
       desk.columns.forEach((colId, index) => {
         columnId = colRes.rows[index].id;
-        let newCards = cardRes.rows.map(card => card.id);
+        let newCards = cardRes.rows.map((card) => card.id);
 
-        finalColumns[colId].cards = finalColumns[colId].cards.map(oldCardId => {
+        finalColumns[colId].cards = finalColumns[colId].cards.map((oldCardId) => {
           let cardIndex = Object.keys(cards).indexOf(oldCardId + '');
           let oldCards = Object.values(cards);
           finalCards[newCards[cardIndex]] = {
@@ -169,8 +176,10 @@ const parseMindmap = async (request, response) => {
             comments: [],
             users: [],
             checked: false,
-            labels: [newLabels[Object.keys(labels).indexOf(oldCards[cardIndex].label + '')]],
-            column_id: columnId
+            labels: labels.length
+              ? [newLabels[Object.keys(labels).indexOf(oldCards[cardIndex].label + '')]]
+              : [],
+            column_id: columnId,
           };
 
           return newCards[cardIndex];
@@ -179,8 +188,8 @@ const parseMindmap = async (request, response) => {
 
       let cardLabels = [];
 
-      Object.values(finalCards).forEach(card => {
-        cardLabels.push(`(${card.labels[0]}, ${card.id})`);
+      Object.values(finalCards).forEach((card) => {
+        card.labels.length && cardLabels.push(`(${card.labels[0]}, ${card.id})`);
       });
 
       cardLabels.length &&
@@ -198,7 +207,7 @@ const parseMindmap = async (request, response) => {
 
       checklists = {};
       checkRes &&
-        checkRes.rows.forEach(check => {
+        checkRes.rows.forEach((check) => {
           if (checklists[check.card_id]) {
             checklists[check.card_id] = [...checklists[check.card_id], check.id];
           } else {
@@ -206,14 +215,14 @@ const parseMindmap = async (request, response) => {
           }
         });
 
-      Object.values(finalCards).forEach(card => {
+      Object.values(finalCards).forEach((card) => {
         finalCards[card.id].checklists = card.checklists.map((check, index) => {
           return {
             id: checklists[card.id][index],
-            items: check.items.map(item => {
+            items: check.items.map((item) => {
               itemRows.push(`(${checklists[card.id][index]}, '${items[item]}', false)`);
               return { text: items[item], id: item, checked: false };
-            })
+            }),
           };
         });
       });
@@ -228,7 +237,7 @@ const parseMindmap = async (request, response) => {
 
       checkitems = {};
       itemRes &&
-        itemRes.rows.forEach(item => {
+        itemRes.rows.forEach((item) => {
           if (checkitems[item.checklist_id]) {
             checkitems[item.checklist_id] = [...checkitems[item.checklist_id], item.id];
           } else {
@@ -236,13 +245,13 @@ const parseMindmap = async (request, response) => {
           }
         });
 
-      Object.values(finalCards).forEach(card => {
-        finalCards[card.id].checklists = finalCards[card.id].checklists.map(check => {
+      Object.values(finalCards).forEach((card) => {
+        finalCards[card.id].checklists = finalCards[card.id].checklists.map((check) => {
           return {
             ...check,
             items: check.items.map((item, index) => {
               return { ...item, id: checkitems[check.id + ''][index] };
-            })
+            }),
           };
         });
       });
@@ -251,7 +260,7 @@ const parseMindmap = async (request, response) => {
         `update desk set columns = '{${desk.columns}}' where id = ${desk.id}`
       );
 
-      const promises = Object.values(finalColumns).map(async col => {
+      const promises = Object.values(finalColumns).map(async (col) => {
         const Column = await pool.query(
           `update public.column set cards = '{${col.cards}}' where id = ${col.id}`
         );
@@ -263,7 +272,7 @@ const parseMindmap = async (request, response) => {
         ok: true,
         desk: desk,
         columns: finalColumns,
-        cards: finalCards
+        cards: finalCards,
       });
     } else {
       response.status(400).send({ message: 'Incorrect data', ok: false });
@@ -288,7 +297,7 @@ const parseDesk = async (request, response) => {
     '#ab47bc',
     '#8bc34a',
     '#3f51b5',
-    '#e91e63'
+    '#e91e63',
   ];
 
   try {
@@ -296,13 +305,13 @@ const parseDesk = async (request, response) => {
       let mindmap = {
         data: { name: desk.name, id: desk.id },
         level: 1,
-        children: []
+        children: [],
       };
       desk.columns.forEach((id, colIndex) => {
         mindmap.children.push({
           data: { id: +(desk.id + '' + id), name: columns[id].name, color: '000000' },
           level: 2,
-          children: []
+          children: [],
         });
         columns[id].cards.forEach((cardId, cardIndex) => {
           let card = cards[cardId];
@@ -312,28 +321,28 @@ const parseDesk = async (request, response) => {
             data: {
               id: +(desk.id + '' + id + cardId),
               name: card.name,
-              color: color
+              color: color,
             },
             level: 3,
-            children: []
+            children: [],
           });
-          let cardColors = colors.filter(c => c !== color);
+          let cardColors = colors.filter((c) => c !== color);
           cards[cardId].checklists.forEach((check, checkIndex) => {
             let idx = Math.floor(Math.random() * cardColors.length);
 
             console.log('check', check);
             checkColor = cardColors[idx] ? cardColors[idx] : '000000';
-            cardColors.filter(c => c !== checkColor);
+            cardColors.filter((c) => c !== checkColor);
             check.items &&
-              check.items.forEach(item => {
+              check.items.forEach((item) => {
                 mindmap.children[colIndex].children[cardIndex].children.push({
                   data: {
                     id: +(desk.id + '' + id + cardId + item.id),
                     name: item.text,
-                    color: checkColor
+                    color: checkColor,
                   },
                   level: 4,
-                  children: []
+                  children: [],
                 });
               });
           });
@@ -351,7 +360,7 @@ const parseDesk = async (request, response) => {
       response.status(201).send({
         message: `Mindmap added successfully`,
         ok: true,
-        mindmap: mindmap
+        mindmap: mindmap,
       });
     } else {
       response.status(400).send({ message: 'Incorrect data', ok: false });
